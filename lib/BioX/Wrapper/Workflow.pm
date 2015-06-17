@@ -127,34 +127,34 @@ Assuming you saved your output to workflow.sh if you run ./workflow.sh you will 
 
 This top part here is the metadata. It tells you the options used to run the script.
 
-    #######################################################################
+    #
     # This file was generated with the following options
     #	--workflow	config.yml
-    #######################################################################
+    #
 
 If --verbose is enabled, and it is by default, you'll see some variables printed out for your benefit
 
-    #######################################################################
-    ## Variables ##
+    #
+    # Variables
     # Indir: /home/user/workflow
     # Outdir: /home/user/workflow/output/backup
     # Samples: test1	test2
-    #######################################################################
+    #
 
 Here is out first rule, named backup. As you can see our $self->outdir is automatically named 'backup', relative to the globally defined outdir.
 
-    #######################################################################
-    ## Starting backup
-    #######################################################################
+    #
+    # Starting backup
+    #
 
     cp /home/user/workflow/test1.csv /home/user/workflow/output/backup/test1.csv
     cp /home/user/workflow/test2.csv /home/user/workflow/output/backup/test2.csv
 
     wait
 
-    #######################################################################
-    ## Ending backup
-    #######################################################################
+    #
+    # Ending backup
+    #
 
 Notice the 'wait' command. If running your outputted workflow through any of the HPC::Runner scripts, the wait signals to wait until all previous processes have ended before beginning the next one.
 
@@ -168,18 +168,18 @@ The "cp blahblahblah" commands would run in parallel, and the next rule would no
 
 Here is some verbose output for the next rule.
 
-    #######################################################################
-    ## Variables ##
+    #
+    # Variables
     # Indir: /home/guests/jir2004/workflow/output
     # Outdir: /home/guests/jir2004/workflow/output/grep_vara
     # Samples: test1	test2
-    #######################################################################
+    #
 
 And here is the actual work.
 
-    #######################################################################
-    ## Starting grep_VARA
-    #######################################################################
+    #
+    # Starting grep_VARA
+    #
 
     echo "Working on $self->indir/test1csv"
     grep -i "VARA" /home/guests/jir2004/workflow/output/test1.csv >> /home/guests/jir2004/workflow/output/grep_vara/test1.grep_VARA.csv
@@ -189,23 +189,23 @@ And here is the actual work.
 
     wait
 
-    #######################################################################
-    ## Ending grep_VARA
-    #######################################################################
+    #
+    # Ending grep_VARA
+    #
 
 So on and so forth.
 
-    #######################################################################
-    ## Variables ##
+    #
+    # Variables
     # Indir: /home/guests/jir2004/workflow/output
     # Outdir: /home/guests/jir2004/workflow/output/grep_varb
     # Samples: test1	test2
-    #######################################################################
+    #
 
 
-    #######################################################################
-    ## Starting grep_VARB
-    #######################################################################
+    #
+    # Starting grep_VARB
+    #
 
     grep -i "VARB" /home/guests/jir2004/workflow/output/test1.csv >> /home/guests/jir2004/workflow/output/grep_varb/test1.grep_VARB.csv
 
@@ -213,13 +213,13 @@ So on and so forth.
 
     wait
 
-    #######################################################################
-    ## Ending grep_VARB
-    #######################################################################
+    #
+    # Ending grep_VARB
+    #
 
-    #######################################################################
-    ## Workflow Finished
-    #######################################################################
+    #
+    # Workflow Finished
+    #
 
 =head1 Customizing your output and special variables
 
@@ -520,6 +520,17 @@ has 'process' => (
     isa => 'Str',
 );
 
+=head3 key
+
+Do stuff
+
+=cut
+
+has 'key' => (
+    is => 'rw',
+    isa => 'Str',
+);
+
 =head3 workflow
 
 Path to workflow workflow. This must be a YAML file.
@@ -558,6 +569,7 @@ has 'sample_based' => (
      default => 0,
 );
 
+
 =head2 Subroutines
 
 Subroutines can also be overriden and/or extended in the usual Moose fashion.
@@ -571,7 +583,7 @@ Starting point.
 sub run {
     my($self) = shift;
 
-    print "#!/bin/bash\n\n";
+    #print "#!/bin/bash\n\n";
 
     $self->print_opts;
 
@@ -592,26 +604,22 @@ sub run {
     $self->get_samples;
 
     if($self->verbose){
-        print "#######################################################################\n";
-        print "# Samples: ",join(", ", @{$self->samples})."\n";
-        print "#######################################################################\n";
+        print "$self->{comment_char}\n";
+        print "$self->{comment_char} Samples: ",join(", ", @{$self->samples})."\n";
+        print "$self->{comment_char}\n";
     }
     if($self->verbose){
-        print <<EOF;
-#######################################################################
-## Starting Workflow
-#######################################################################
-EOF
+        print "$self->{comment_char}\n";
+        print "$self->{comment_char} Starting Workflow\n";
+        print "$self->{comment_char}\n";
     }
 
     $self->write_pipeline;
 
     if($self->verbose){
-        print <<EOF;
-#######################################################################
-## Ending Workflow
-#######################################################################
-EOF
+        print "$self->{comment_char}\n";
+        print "$self->{comment_char} Ending Workflow\n";
+        print "$self->{comment_char}\n";
     }
 }
 
@@ -787,6 +795,7 @@ sub dothings {
     }
 
     $key = $keys[0];
+    $self->key($key);
     $camel_key = decamelize($key);
 
     if($self->autoname){
@@ -813,18 +822,15 @@ sub dothings {
 
     $self->process($process);
 
-    my $template = $self->make_template($process);
-
-
     if(exists $self->local_rule->{$key}->{before_meta}){
-        print "\n#######################################################################\n";
-        print "## ".$self->local_rule->{$key}->{before_meta}."\n";
-        print "#######################################################################\n\n";
+        print "$self->{comment_char}\n";
+        print "$self->{comment_char} ".$self->local_rule->{$key}->{before_meta}."\n";
+        print "$self->{comment_char}\n\n";
     }
     else{
-        print "\n#######################################################################\n";
-        print "## Starting $key\n";
-        print "#######################################################################\n\n";
+        print "$self->{comment_char}\n";
+        print "$self->{comment_char} Starting $key\n";
+        print "$self->{comment_char}\n\n";
     }
 
     if($self->resample){
@@ -832,25 +838,61 @@ sub dothings {
     }
 
     if($self->verbose){
-        print "\n\n#######################################################################\n";
-        print "## Variables ##\n";
-        print "# Indir: ".$self->indir."\n";
-        print "# Outdir: ".$self->outdir."\n";
+        print "\n\n$self->{comment_char}\n";
+        print "$self->{comment_char} Variables \n";
+        print "$self->{comment_char} Indir: ".$self->indir."\n";
+        print "$self->{comment_char} Outdir: ".$self->outdir."\n";
+
         if(exists $self->local_rule->{$key}->{local}){
 
-            print "# Local Variables:\n";
+            print "$self->{comment_char} Local Variables:\n";
             foreach my $href (@{$self->local_attr}){
 
                 while( my($k, $v) = each(%{$href})){
-                    print "#\t$k: ".$self->$k."\n";
+                    print "$self->{comment_char}\t$k: ".$self->$k."\n";
                 }
             }
         }
         if($self->resample){
-            print "# Resampling Samples: ",join(", ", @{$self->samples})."\n";
+            print "$self->{comment_char} Resampling Samples: ",join(", ", @{$self->samples})."\n";
         }
-        print "#######################################################################\n\n";
+        print "$self->{comment_char}\n\n";
     }
+
+    $self->write_process($override, $process);
+
+
+    if(exists $self->local_rule->{$key}->{after_meta}){
+        print "\n$self->{comment_char}\n";
+        print "$self->{comment_char} ".$self->local_rule->{$key}->{after_meta}."\n";
+        print "$self->{comment_char}\n";
+    }
+    else{
+        print "\n$self->{comment_char}\n";
+        print "$self->{comment_char} Ending $key\n";
+        print "$self->{comment_char}\n";
+    }
+
+    #Set bools back to false and reinitialize global vars
+    $self->resample(0);
+    $self->attr($self->global_attr);
+    $self->make_meta;
+
+    if($self->enforce_struct){
+        $self->indir($process_outdir);
+    }
+}
+
+=head3 write_process
+
+Fill in the template with the process
+
+=cut
+
+sub write_process{
+    my($self, $override, $process) = @_;
+
+    my $template = $self->make_template($process);
 
     if(!$override){
 
@@ -875,25 +917,6 @@ sub dothings {
         print "\nwait\n";
     }
 
-    if(exists $self->local_rule->{$key}->{after_meta}){
-        print "\n#######################################################################\n";
-        print "## ".$self->local_rule->{$key}->{after_meta}."\n";
-        print "#######################################################################\n";
-    }
-    else{
-        print "\n#######################################################################\n";
-        print "## Ending $key\n";
-        print "#######################################################################\n";
-    }
-
-    #Set bools back to false and reinitialize global vars
-    $self->resample(0);
-    $self->attr($self->global_attr);
-    $self->make_meta;
-
-    if($self->enforce_struct){
-        $self->indir($process_outdir);
-    }
 }
 
 __PACKAGE__->meta->make_immutable;

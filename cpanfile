@@ -12,6 +12,8 @@ requires 'MooseX::Getopt';
 requires 'MooseX::Getopt::Usage';
 requires 'MooseX::SimpleConfig';
 requires 'BioX::Wrapper';
+requires 'MooseX::Getopt::Usage';
+requires 'MooseX::Getopt::Usage::Role::Man';
 
 requires 'YAML::XS';
 requires 'String::CamelCase';
