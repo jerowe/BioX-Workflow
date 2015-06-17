@@ -1,0 +1,921 @@
+package BioX::Wrapper::Writer;
+
+use 5.008_005;
+our $VERSION = '0.01';
+
+use Moose;
+use File::Find::Rule;
+use File::Basename;
+use File::Path qw(make_path remove_tree);
+use File::Find::Rule;
+use Cwd;
+use Data::Dumper;
+use List::Compare;
+use YAML::XS 'LoadFile';
+use String::CamelCase qw(camelize decamelize wordsplit);
+use Data::Dumper;
+use Class::Load ':all';
+use IO::File;
+use Interpolation E => 'eval';
+use Text::Template qw(fill_in_file fill_in_string);
+
+extends 'BioX::Wrapper';
+with 'MooseX::Getopt';
+with 'MooseX::Getopt::Usage';
+
+=encoding utf-8
+
+=head1 NAME
+
+BioX::Wrapper::Writer - A very opinionated template based workflow writer.
+
+=head1 SYNOPSIS
+
+Most of the functionality can be accessed through the biox-wrapper-writer.pl script.
+
+    biox-wrapper-writer.pl --workflow /path/to/workflow.yml
+
+This module was written with Bioinformatics workflows in mind, but should be extensible to any sort of workflow or pipeline.
+
+=head1 Philosophy
+
+Most bioinformatics workflows involve starting with a set of samples, and processing those samples in one or more steps. Also, most bioinformatics workflows are bash based, and no one wants to reinvent the wheel to rewrite their code in perl/python/whatever.
+
+For example with our samples test1.vcf and test2.vcf, we want to bgzip and annotate using snpeff, and then parse the output using vcf-to-table.pl (shameless plug for BioX::Wrapper::Annovar).
+
+BioX::Wrapper::Writer assumes your have a set of inputs, known as samples, and these inputs will carry on through your pipeline. There are some exceptions to this, which we will explore with the resample option.
+
+It also makes several assumtions about your output structure. It assumes you have each of your processes/rules outputting to a distinct directory.
+
+These directories will be created and automatically named based on your process name. You can disable this and make your own out directories by either specifiying autoname: 1 in your global, in any of the local rules to disable it for that rule, or by specifying an outdirectory.
+
+=head1 A Simple Example
+
+Here is a very simple example that searches a directory for *.csv files and creates an outdir /home/user/workflow/output if one doesn't exist.
+
+Create the /home/user/workflow/workflow.yml
+
+    ---
+    global:
+        - indir: /home/guests/jir2004/workflow
+        - outdir: /home/guests/jir2004/workflow/output
+        - file_rule: (.csv)$
+    rules:
+        - backup:
+            process: cp {$self->indir}/{$sample}.csv {$self->outdir}/{$sample}.csv
+        - grep_VARA:
+            process: |
+                echo "Working on {$self->{indir}}/{$sample.csv}"
+                grep -i "VARA" {$self->indir}/{$sample}.csv >> {$self->outdir}/{$sample}.grep_VARA.csv
+        - grep_VARB:
+            process: |
+                grep -i "VARB" {$self->indir}/{$sample}.grep_VARA.csv >> {$self->outdir}/{$sample}.grep_VARA.grep_VARB.csv
+
+If we step through the whole process
+
+    cd /home/user/workflow
+
+    #Create test1.csv with some lines
+    echo "This is VARA" >> test1.csv
+    echo "This is VARB" >> test1.csv
+    echo "This is VARC" >> test1.csv
+
+    #Create test2.csv with some lines
+    echo "This is VARA" >> test2.csv
+    echo "This is VARB" >> test2.csv
+    echo "This is VARC" >> test2.csv
+    echo "This is some data I don't want" >> test2.csv
+
+Run the script to create out directory structure and workflow bash script
+
+    biox-wrapper-writer.pl --workflow workflow.yml > workflow.sh
+
+=head2 Look at the directory structure
+
+    /home/user/workflow/
+        test1.csv
+        test2.csv
+        /output
+            /backup
+            /grep_vara
+            /grep_varb
+
+=head2 Run the workflow
+
+Assuming you saved your output to workflow.sh if you run ./workflow.sh you will get the following.
+
+    /home/user/workflow/
+        test1.csv
+        test2.csv
+        /output
+            /backup
+                test1.csv
+                test2.csv
+            /grep_vara
+                test1.grep_VARA.csv
+                test2.grep_VARA.csv
+            /grep_varb
+                test1.grep_VARA.grep_VARB.csv
+                test2.grep_VARA.grep_VARB.csv
+
+
+=head2 A closer look at workflow.sh
+
+This top part here is the metadata. It tells you the options used to run the script.
+
+    #######################################################################
+    # This file was generated with the following options
+    #	--workflow	config.yml
+    #######################################################################
+
+If --verbose is enabled, and it is by default, you'll see some variables printed out for your benefit
+
+    #######################################################################
+    ## Variables ##
+    # Indir: /home/user/workflow
+    # Outdir: /home/user/workflow/output/backup
+    # Samples: test1	test2
+    #######################################################################
+
+Here is out first rule, named backup. As you can see our $self->outdir is automatically named 'backup', relative to the globally defined outdir.
+
+    #######################################################################
+    ## Starting backup
+    #######################################################################
+
+    cp /home/user/workflow/test1.csv /home/user/workflow/output/backup/test1.csv
+    cp /home/user/workflow/test2.csv /home/user/workflow/output/backup/test2.csv
+
+    wait
+
+    #######################################################################
+    ## Ending backup
+    #######################################################################
+
+Notice the 'wait' command. If running your outputted workflow through any of the HPC::Runner scripts, the wait signals to wait until all previous processes have ended before beginning the next one.
+
+For instance, if running this as
+
+    slurmrunner.pl --infile workflow.sh
+    #OR
+    mcerunner.pl --infile workflow.sh
+
+The "cp blahblahblah" commands would run in parallel, and the next rule would not begin until those processes have finished.
+
+Here is some verbose output for the next rule.
+
+    #######################################################################
+    ## Variables ##
+    # Indir: /home/guests/jir2004/workflow/output
+    # Outdir: /home/guests/jir2004/workflow/output/grep_vara
+    # Samples: test1	test2
+    #######################################################################
+
+And here is the actual work.
+
+    #######################################################################
+    ## Starting grep_VARA
+    #######################################################################
+
+    echo "Working on $self->indir/test1csv"
+    grep -i "VARA" /home/guests/jir2004/workflow/output/test1.csv >> /home/guests/jir2004/workflow/output/grep_vara/test1.grep_VARA.csv
+
+    echo "Working on $self->indir/test2csv"
+    grep -i "VARA" /home/guests/jir2004/workflow/output/test2.csv >> /home/guests/jir2004/workflow/output/grep_vara/test2.grep_VARA.csv
+
+    wait
+
+    #######################################################################
+    ## Ending grep_VARA
+    #######################################################################
+
+So on and so forth.
+
+    #######################################################################
+    ## Variables ##
+    # Indir: /home/guests/jir2004/workflow/output
+    # Outdir: /home/guests/jir2004/workflow/output/grep_varb
+    # Samples: test1	test2
+    #######################################################################
+
+
+    #######################################################################
+    ## Starting grep_VARB
+    #######################################################################
+
+    grep -i "VARB" /home/guests/jir2004/workflow/output/test1.csv >> /home/guests/jir2004/workflow/output/grep_varb/test1.grep_VARB.csv
+
+    grep -i "VARB" /home/guests/jir2004/workflow/output/test2.csv >> /home/guests/jir2004/workflow/output/grep_varb/test2.grep_VARB.csv
+
+    wait
+
+    #######################################################################
+    ## Ending grep_VARB
+    #######################################################################
+
+    #######################################################################
+    ## Workflow Finished
+    #######################################################################
+
+=head1 Customizing your output and special variables
+
+BioX::Wrapper::Writer uses a few conventions and special variables. As you probably noticed these are indir, outdir, infiles, and file_rule. In
+addition sample is the currently scoped sample. Infiles is not used by default, but is simply a store of all the original samples found when the
+script is first run, before any processes. In the above example the $self->infiles would evaluate as ['test1.csv', 'test2.csv'].
+
+Variables are interpolated using L<Interpolation> and L<Text::Template>. All variables, unless explictly defined with "$my variable = "stuff"" in your
+process key, must be referenced with $self, and surrounded with brackets {}. Instead of $self->outdir, it should be {$self->outdir}. It is also
+possible to define variables with other variables in this way. Everything is referenced with $self in order to dynamically pass variables to
+Text::Template. The sample variable, $sample, is the exception because it is defined in the loop.
+
+    ---
+    global:
+        - ROOT: /home/user/workflow
+        - indir: {$self->ROOT}
+        - outdir: {$self->indir}/output
+
+Your variables must be defined in an appropriate order.
+
+=head2 Local and Global Variables
+
+Global variables will always be available, but can be overwritten by local
+variables contained in your rules.
+
+    ---
+    global:
+        - indir: /home/user/example-workflow
+        - outdir: /home/user/example-workflow/gemini-wrapper
+        - file_rule: (.vcf)$|(.vcf.gz)$
+        - some_variable: {$self->indir}/file_to_keep_handy
+    rules:
+        - backup:
+            local:
+                - ext: "backup"
+            process: cp {$self->indir}/{$sample}.csv {$self->outdir}/{$sample}.{$self->ext}.csv
+
+=head2 Rules
+
+Rules are processed in the order they appear.
+
+Before any rules are processed, first the samples are found. These are grepped using File::Basename, the indir, and the file_rule variable. The
+default is to get rid of the everything after the final '.' .
+
+=head2 Overriding Processes
+
+By default your process is evaluated as
+
+    foreach my $sample (@{$self->samples}){
+        #Get the value from the process key.
+    }
+
+If instead you would like to use the infiles, or some other random process that has nothing to do with your samples, you can override the process
+template.
+
+    rules:
+        - backup:
+            outdir: {$self->ROOT}/datafiles
+            override: 1
+            process: |
+                wget {$self->some_globally_defined_parameter}
+
+
+
+=head2 Directory Structure
+
+BioX::Wrapper::Writer will create a directory structure based on your rule name, decamelized, and your globally defined outdir.
+
+/path/to/outdir
+    /rule1
+    /rule2
+    /rule3
+
+If you don't like this you can globally disable autoname (autoname: 0), or simply defined indir or outdir within your global variables. If using the
+second method it is probably a good idea to also defined a ROOT_DIR in your global variables.
+
+=head2 Other variables
+
+A quick overview of other samples
+
+=head3 Resampling
+
+I can only think of a few examples where one would want to perform a resample, since the files probably won't exist, but one example is if you want to
+check for uncompressed files, compress them, and then carry on with your life.
+
+    ---
+    global:
+        - indir: /home/user/gemini
+        - outdir: /home/user/gemini/gemini-wrapper
+        - file_rule: (.vcf)$|(.vcf.gz)$
+        - infile:
+    rules:
+        - bgzip:
+            local:
+                - file_rule: (.vcf)$
+                - resample: 1
+            before_meta: bgzip and tabix index uncompressed files
+            after_meta: finished bgzip
+            process: bgzip {$self->{indir}}/{$sample}.vcf && tabix {$self->{indir}}/{$sample}.vcf.gz
+        - normalize_snpeff:
+            local:
+                - indir: /home/user
+                - file_rule: (.vcf.gz)$
+                - resample: 1
+            process: |
+                bcftools view {$self->indir}/{$sample}.vcf.gz | sed 's/ID=AD,Number=./ID=AD,Number=R/' \
+                    | vt decompose -s - \
+                    | vt normalize -r $REFGENOME - \
+                    | java -Xmx4G -jar $SNPEFF/snpEff.jar -c \$SNPEFF/snpEff.config -formatEff -classic GRCh37.75  \
+                    | bgzip -c > \
+                    {$self->{outdir}}/{$sample}.norm.snpeff.gz && tabix {$self->{outdir}}/{$sample}.norm.snpeff.gz
+
+The bgzip rule would first run a resample looking for only files ending in .vcf, and compress them. The following rule, normalize_snpeff, looks again
+in the indir (which we set here otherwise it would have been the previous rules outdir), and resamples based on the .vcf.gz extension.
+
+=head1 In Code Documenation
+
+You shouldn't really need to look here unless you have some reason to do some serious hacking.
+
+=head2 Attributes
+
+Moose attributes. Technically any of these can be changed, but may break everything.
+
+=head3 resample
+
+Boolean value get new samples based on indir/file_rule or no
+
+Samples are found at the beginning of the workflow, based on the global indir variable and the file_find.
+
+Chances are you don't want to set resample to try, because these files probably won't exist outside of the indirectory until the pipeline is run.
+
+One example of doing so, shown in the gemini.yml in the examples directory, is looking for uncompressed files, .vcf extension, compressing them, and
+then resampling based on the .vcf.gz extension.
+
+=cut
+
+has 'resample' => (
+     is => 'rw',
+     isa => 'Bool',
+     default => 0,
+);
+
+=head3 autoname
+
+Autoname - Create outdirectory based on rulename
+
+global:
+    - outdir: /home/user/workflow/processed
+rule:
+    normalize:
+        process:
+            dostuff {$self->indir}/{$sample}.in >> {$self->outdir}/$sample.out
+
+Would create your directory structure /home/user/workflow/processed/normalize (if it doesn't exist)
+
+=cut
+
+has 'autoname' => (
+     is => 'rw',
+     isa => 'Bool',
+     default => 1,
+);
+
+=head3 verbose
+
+Output some more things
+
+=cut
+
+has 'verbose' => (
+     is => 'rw',
+     isa => 'Bool',
+     default => 1,
+);
+
+=head3 wait
+
+Print "wait" at the end of each rule
+
+=cut
+
+has 'wait' => (
+     is => 'rw',
+     isa => 'Bool',
+     default => 1,
+);
+
+=head3 enforce_struct
+
+Enforce a particular workflow where the outdirectory (outdir) from the previous rule is the indirectory for the current
+
+=cut
+
+has 'enforce_struct' => (
+     is => 'rw',
+     isa => 'Bool',
+     default => 1,
+);
+
+=head3 indir outdir
+
+=cut
+
+has ['indir', 'outdir']  => (
+     is => 'rw',
+     isa => 'Str',
+     default => sub {getcwd();},
+);
+
+
+=head3 file_rule
+
+Rule to find files
+
+=cut
+
+has 'file_rule' =>(
+     is => 'rw',
+     isa => 'Str',
+     default => sub { return "\\.[^.]*"; }
+);
+
+
+has 'yaml' => (
+    is => 'rw',
+);
+
+=head3 attr
+
+attributes read in from runtime
+
+=cut
+
+has 'attr' => (
+    is => 'rw',
+    isa => 'ArrayRef',
+);
+
+=head3 global_attr
+
+Attributes defined in the global section of the yaml file
+
+=cut
+
+has 'global_attr' => (
+    is => 'rw',
+    isa => 'ArrayRef',
+);
+
+=head3 local_attr
+
+Attributes defined in the rules->rulename->local section of the yaml file
+
+=cut
+
+has 'local_attr' => (
+    is => 'rw',
+    isa => 'ArrayRef',
+);
+
+=head3 local_rule
+
+=cut
+
+has 'local_rule' => (
+    is => 'rw',
+    isa => 'HashRef'
+);
+
+=head3 infiles
+
+Infiles to be processed
+
+=cut
+
+has 'infiles' => (
+     is => 'rw',
+     isa => 'ArrayRef',
+);
+
+=head3 samples
+
+=cut
+
+has 'samples' => (
+     is => 'rw',
+     isa => 'ArrayRef',
+);
+
+=head3 process
+
+Do stuff
+
+=cut
+
+has 'process' => (
+    is => 'rw',
+    isa => 'Str',
+);
+
+=head3 workflow
+
+Path to workflow workflow. This must be a YAML file.
+
+=cut
+
+has 'workflow' => (
+     is => 'rw',
+     isa => 'Str',
+     required => 1,
+);
+
+=head3 rule_based
+
+This is the default. The outer loop are the rules, not the samples
+
+=cut
+
+has 'rule_based' => (
+     is => 'rw',
+     isa => 'Bool',
+     default => 1,
+);
+
+=head3 sample_based
+
+Default Value. The outer loop is samples, not rules. Must be set in your global values or on the command line --sample_based 1
+
+If you ever have resample: 1 in your config you should NOT set this value to true!
+
+=cut
+
+has 'sample_based' => (
+     is => 'rw',
+     isa => 'Bool',
+     default => 0,
+);
+
+=head2 Subroutines
+
+Subroutines can also be overriden and/or extended in the usual Moose fashion.
+
+=head3 run
+
+Starting point.
+
+=cut
+
+sub run {
+    my($self) = shift;
+
+    print "#!/bin/bash\n\n";
+
+    $self->print_opts;
+
+    my $array =  LoadFile($self->workflow);
+
+    $self->yaml($array);
+
+    $self->class_load;
+
+    $self->global_attr($array->{global});
+
+    $self->attr($self->global_attr);
+
+    $self->make_meta;
+
+    $self->make_outdir;
+
+    $self->get_samples;
+
+    if($self->verbose){
+        print "#######################################################################\n";
+        print "# Samples: ",join(", ", @{$self->samples})."\n";
+        print "#######################################################################\n";
+    }
+    if($self->verbose){
+        print <<EOF;
+#######################################################################
+## Starting Workflow
+#######################################################################
+EOF
+    }
+
+    $self->write_pipeline;
+
+    if($self->verbose){
+        print <<EOF;
+#######################################################################
+## Ending Workflow
+#######################################################################
+EOF
+    }
+}
+
+=head3 make_outdir
+
+Set initial indir and outdir
+
+=cut
+
+sub make_outdir {
+    my($self) = @_;
+
+    make_path($self->outdir) if ! -d $self->outdir;
+}
+
+=head3 get_samples
+
+Get basename of the files. Can add optional rules.
+
+sample.vcf.gz and sample.vcf would be sample if the file_rule is (.vcf)$|(.vcf.gz)$
+
+Also gets the full path to infiles
+
+Instead of doing
+
+    foreach my $sample (@$self->samples){
+        dostuff
+    }
+
+Could have
+
+    foreach my $infile (@$self->infiles){
+        dostuff
+    }
+
+=cut
+
+sub get_samples{
+    my($self) = shift;
+
+    my $text = $self->file_rule;
+
+    my @whole = find(file => name => qr/$text/, maxdepth => 1, in => $self->indir);
+
+    $self->infiles(\@whole);
+
+    my @basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
+
+    $self->samples(\@basename);
+}
+
+=head3 load
+
+Load classes defined in yaml with Class::Load
+
+=cut
+
+sub class_load {
+    my($self) = shift;
+
+    return unless $self->yaml->{use};
+
+    my $modules = $self->yaml->{use};
+
+    foreach my $m (@$modules){
+        load_class($m);
+    }
+}
+
+=head3 make_template
+
+Make the template for interpolating strings
+
+=cut
+
+sub make_template{
+    my($self, $input) = @_;
+
+    my  $template = Text::Template->new( TYPE => 'STRING',
+        SOURCE => "$E{$input}",
+    );
+
+    return $template;
+}
+
+=head3 make_meta
+
+make attributes
+
+=cut
+
+sub make_meta{
+    my($self) = shift;
+
+    my $meta = __PACKAGE__->meta;
+
+    $meta->make_mutable;
+
+    my %seen = ();
+
+    for my $attr ( $meta->get_all_attributes  ) {
+        $seen{$attr->name} = 1;
+    }
+
+    foreach my $href (@{$self->attr}){
+
+        while( my($k, $v) = each(%{$href})){
+
+            if(! exists $seen{$k}){
+                $meta->add_attribute($k => (is => 'rw'));
+            }
+
+            next unless $v;
+
+            my $template = $self->make_template($v);
+
+            my $text = $template->fill_in(HASH => {self => \$self});
+            $self->$k($text);
+        }
+    }
+
+    $self->make_outdir if exists $seen{outdir};
+    $meta->make_immutable;
+}
+
+sub write_pipeline{
+    my($self) = shift;
+
+    my $process = $self->yaml->{rules};
+
+    die print "Where are the rules?\n" unless $process;
+
+    # This is untested with resampling!
+    if($self->sample_based){
+        #Store the samples
+        my $sample_store = $self->samples;
+
+        foreach my $sample (@$sample_store){
+            $self->samples([$sample]);
+            foreach my $p (@{$process}){
+                next unless $p;
+                $self->local_rule($p);
+                $self->dothings;
+            }
+        }
+    }
+    elsif($self->rule_based){
+        foreach my $p (@{$process}){
+            next unless $p;
+            $self->local_rule($p);
+            $self->dothings;
+        }
+    }
+    else{
+        die print "Workflow must be rule based or sample based!\n";
+    }
+}
+
+sub dothings {
+    my($self) = shift;
+
+
+    my(@keys, $override, $camel_key, $key, $process, $process_outdir);
+
+    $override = 0;
+    @keys = keys %{$self->local_rule};
+
+    #TODO make these more informative messages
+    return unless @keys;
+
+    if($#keys > 0){
+        die print "We have a problem! There should only be one key. Please see the documentation!\n";
+    }
+
+    $key = $keys[0];
+    $camel_key = decamelize($key);
+
+    if($self->autoname){
+        $self->outdir($self->outdir."/$camel_key");
+        $process_outdir = $self->outdir;
+        $self->make_outdir();
+    }
+
+    if (exists $self->local_rule->{$key}->{override} && $self->local_rule->{$key}->{override} == 1){
+        $override = 1;
+    }
+
+    if(exists $self->local_rule->{$key}->{local}){
+        $self->local_attr($self->local_rule->{$key}->{local});
+        $self->attr($self->local_attr);
+        $self->make_meta;
+    }
+
+    if(! exists $self->local_rule->{$key}->{process}){
+        die print "There is no process key! Dying...\n";
+    }
+
+    $process = $self->local_rule->{$key}->{process};
+
+    $self->process($process);
+
+    my $template = $self->make_template($process);
+
+
+    if(exists $self->local_rule->{$key}->{before_meta}){
+        print "\n#######################################################################\n";
+        print "## ".$self->local_rule->{$key}->{before_meta}."\n";
+        print "#######################################################################\n\n";
+    }
+    else{
+        print "\n#######################################################################\n";
+        print "## Starting $key\n";
+        print "#######################################################################\n\n";
+    }
+
+    if($self->resample){
+        $self->get_samples;
+    }
+
+    if($self->verbose){
+        print "\n\n#######################################################################\n";
+        print "## Variables ##\n";
+        print "# Indir: ".$self->indir."\n";
+        print "# Outdir: ".$self->outdir."\n";
+        if(exists $self->local_rule->{$key}->{local}){
+
+            print "# Local Variables:\n";
+            foreach my $href (@{$self->local_attr}){
+
+                while( my($k, $v) = each(%{$href})){
+                    print "#\t$k: ".$self->$k."\n";
+                }
+            }
+        }
+        if($self->resample){
+            print "# Resampling Samples: ",join(", ", @{$self->samples})."\n";
+        }
+        print "#######################################################################\n\n";
+    }
+
+    if(!$override){
+
+        foreach my $sample (@{$self->samples}){
+            $template->fill_in(HASH => {self => \$self, sample => $sample}, OUTPUT => \*STDOUT);
+            print "\n";
+        }
+    }
+    else{
+        # Example
+        #my $tt =(<<'EOF');
+        #{
+        #foreach my $infile (@{$self->infiles}){
+           #$OUT .= $infile."\n";
+        #}
+        #}
+        $template->fill_in(HASH => {self => \$self}, OUTPUT => \*STDOUT);
+        print "\n";
+    }
+
+    if($self->wait){
+        print "\nwait\n";
+    }
+
+    if(exists $self->local_rule->{$key}->{after_meta}){
+        print "\n#######################################################################\n";
+        print "## ".$self->local_rule->{$key}->{after_meta}."\n";
+        print "#######################################################################\n";
+    }
+    else{
+        print "\n#######################################################################\n";
+        print "## Ending $key\n";
+        print "#######################################################################\n";
+    }
+
+    #Set bools back to false and reinitialize global vars
+    $self->resample(0);
+    $self->attr($self->global_attr);
+    $self->make_meta;
+
+    if($self->enforce_struct){
+        $self->indir($process_outdir);
+    }
+}
+
+__PACKAGE__->meta->make_immutable;
+
+1;
+
+__END__
+
+
+=head1 DESCRIPTION
+
+BioX::Wrapper::Writer is
+
+=head1 AUTHOR
+
+Jillian Rowe E<lt>jillian.e.rowe@gmail.comE<gt>
+
+=head1 COPYRIGHT
+
+Copyright 2015- Jillian Rowe
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=head1 SEE ALSO
+
+=cut

@@ -1,0 +1,32 @@
+---
+global:
+    - indir: /home/guests/jir2004/perlmodule/BioX-Wrapper-Writer/example
+    - outdir: /home/guests/jir2004/perlmodule/BioX-Wrapper-Writer/example/gemini-wrapper
+    - file_rule: (.vcf)$|(.vcf.gz)$
+    - infile:
+rules:
+    - bgzip:
+        local:
+            - indir: /home/guests/jir2004/perlmodule/BioX-Wrapper-Writer/example
+            - file_rule: (.vcf)$
+            - resample: 1
+        before_meta: bgzip and tabix index uncompressed files
+        after_meta: finished bgzip
+        process: bgzip {$self->{indir}}/{$sample}.vcf && tabix {$self->{indir}}/{$sample}.vcf.gz
+    - normalize_snpeff:
+        local:
+            - indir: /home/guests/jir2004/perlmodule/BioX-Wrapper-Writer/example
+            - file_rule: (.vcf)$|(.vcf.gz)$
+            - resample: 1
+        process: |
+            bcftools view {$self->indir}/{$sample}.vcf.gz | sed 's/ID=AD,Number=./ID=AD,Number=R/' \
+                | vt decompose -s - \
+                | vt normalize -r $REFGENOME - \
+                | java -Xmx4G -jar $SNPEFF/snpEff.jar -c \$SNPEFF/snpEff.config -formatEff -classic GRCh37.75  \
+                | bgzip -c > \
+                {$self->{outdir}}/{$sample}.norm.snpeff.gz && tabix {$self->{outdir}}/{$sample}.norm.snpeff.gz
+    - gemini_sqlite:
+        process: |
+            gemini load -v {$self->indir}/{$sample}.norm.snpeff.gz \
+                --skip-cadd -t snpEff \
+               {$self->outdir}/{$sample}.vcf.db
