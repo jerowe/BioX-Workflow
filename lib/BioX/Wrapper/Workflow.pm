@@ -1,4 +1,4 @@
-package BioX::Wrapper::Writer;
+package BioX::Wrapper::Workflow;
 
 use 5.008_005;
 our $VERSION = '0.01';
@@ -22,18 +22,22 @@ use Text::Template qw(fill_in_file fill_in_string);
 extends 'BioX::Wrapper';
 with 'MooseX::Getopt';
 with 'MooseX::Getopt::Usage';
+with 'MooseX::Getopt::Usage::Role::Man';
+
+# For pretty man pages!
+$ENV{TERM}='xterm-256color';
 
 =encoding utf-8
 
 =head1 NAME
 
-BioX::Wrapper::Writer - A very opinionated template based workflow writer.
+BioX::Wrapper::Workflow - A very opinionated template based workflow writer.
 
 =head1 SYNOPSIS
 
-Most of the functionality can be accessed through the biox-wrapper-writer.pl script.
+Most of the functionality can be accessed through the biox-workflow.pl script.
 
-    biox-wrapper-writer.pl --workflow /path/to/workflow.yml
+    biox-workflow.pl --workflow /path/to/workflow.yml
 
 This module was written with Bioinformatics workflows in mind, but should be extensible to any sort of workflow or pipeline.
 
@@ -43,7 +47,7 @@ Most bioinformatics workflows involve starting with a set of samples, and proces
 
 For example with our samples test1.vcf and test2.vcf, we want to bgzip and annotate using snpeff, and then parse the output using vcf-to-table.pl (shameless plug for BioX::Wrapper::Annovar).
 
-BioX::Wrapper::Writer assumes your have a set of inputs, known as samples, and these inputs will carry on through your pipeline. There are some exceptions to this, which we will explore with the resample option.
+BioX::Wrapper::Workflow assumes your have a set of inputs, known as samples, and these inputs will carry on through your pipeline. There are some exceptions to this, which we will explore with the resample option.
 
 It also makes several assumtions about your output structure. It assumes you have each of your processes/rules outputting to a distinct directory.
 
@@ -88,7 +92,7 @@ If we step through the whole process
 
 Run the script to create out directory structure and workflow bash script
 
-    biox-wrapper-writer.pl --workflow workflow.yml > workflow.sh
+    biox-workflow.pl --workflow workflow.yml > workflow.sh
 
 =head2 Look at the directory structure
 
@@ -219,7 +223,7 @@ So on and so forth.
 
 =head1 Customizing your output and special variables
 
-BioX::Wrapper::Writer uses a few conventions and special variables. As you probably noticed these are indir, outdir, infiles, and file_rule. In
+BioX::Wrapper::Workflow uses a few conventions and special variables. As you probably noticed these are indir, outdir, infiles, and file_rule. In
 addition sample is the currently scoped sample. Infiles is not used by default, but is simply a store of all the original samples found when the
 script is first run, before any processes. In the above example the $self->infiles would evaluate as ['test1.csv', 'test2.csv'].
 
@@ -282,7 +286,7 @@ template.
 
 =head2 Directory Structure
 
-BioX::Wrapper::Writer will create a directory structure based on your rule name, decamelized, and your globally defined outdir.
+BioX::Wrapper::Workflow will create a directory structure based on your rule name, decamelized, and your globally defined outdir.
 
 /path/to/outdir
     /rule1
@@ -901,7 +905,7 @@ __END__
 
 =head1 DESCRIPTION
 
-BioX::Wrapper::Writer is
+BioX::Wrapper::Workflow is
 
 =head1 AUTHOR
 

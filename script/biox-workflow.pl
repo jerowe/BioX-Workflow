@@ -5,7 +5,7 @@ package Main;
 use Moose;
 #use Carp::Always;
 
-extends 'BioX::Wrapper::Writer';
+extends 'BioX::Wrapper::Workflow';
 
 Main->new_with_options->run;
 
