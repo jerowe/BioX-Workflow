@@ -15,9 +15,12 @@
 #===============================================================================
 
 
+package Main;
 use Moose;
 
 extends 'BioX::Wrapper::Workflow::Drake';
 
+Main->new_with_options->run;
 
+1;
 
