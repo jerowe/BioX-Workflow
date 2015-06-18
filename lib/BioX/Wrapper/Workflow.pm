@@ -18,6 +18,7 @@ use Class::Load ':all';
 use IO::File;
 use Interpolation E => 'eval';
 use Text::Template qw(fill_in_file fill_in_string);
+use Data::Pairs;
 
 extends 'BioX::Wrapper';
 with 'MooseX::Getopt';
@@ -273,14 +274,19 @@ By default your process is evaluated as
     }
 
 If instead you would like to use the infiles, or some other random process that has nothing to do with your samples, you can override the process
-template.
+template. Make sure to use the previously defined $OUT. For more information see the L<Text::Template> man page.
 
     rules:
         - backup:
             outdir: {$self->ROOT}/datafiles
             override: 1
             process: |
-                wget {$self->some_globally_defined_parameter}
+                $OUT .= wget {$self->some_globally_defined_parameter}
+                {
+                foreach my $infile (@{$self->infiles}){
+                    $OUT .= "dostuff $infile";
+                }
+                }
 
 
 
@@ -383,6 +389,19 @@ has 'autoname' => (
      default => 1,
 );
 
+=head3 auto_input
+
+This is similar to the autoname function in the BioX::Wrapper::Workflow.
+Instead this says each input should be the previous output.
+
+=cut
+
+has 'auto_input' => (
+    is => 'rw',
+    isa => 'Bool',
+    default => 1,
+);
+
 =head3 verbose
 
 Output some more things
@@ -419,6 +438,19 @@ has 'enforce_struct' => (
      default => 1,
 );
 
+=head3 override_process
+
+local:
+    - override: 1
+
+=cut
+
+has 'override_process' => (
+     is => 'rw',
+     isa => 'Bool',
+     default => 0,
+);
+
 =head3 indir outdir
 
 =cut
@@ -429,6 +461,17 @@ has ['indir', 'outdir']  => (
      default => sub {getcwd();},
 );
 
+=head3 Input Output
+
+Special variables that can have input/output
+
+=cut
+
+has ['INPUT', 'OUTPUT'] =>(
+    is => 'rw',
+    isa => 'Str',
+    default => '',
+);
 
 =head3 file_rule
 
@@ -455,7 +498,7 @@ attributes read in from runtime
 
 has 'attr' => (
     is => 'rw',
-    isa => 'ArrayRef',
+    isa => 'Data::Pairs',
 );
 
 =head3 global_attr
@@ -466,7 +509,7 @@ Attributes defined in the global section of the yaml file
 
 has 'global_attr' => (
     is => 'rw',
-    isa => 'ArrayRef',
+    isa => 'Data::Pairs',
 );
 
 =head3 local_attr
@@ -477,7 +520,7 @@ Attributes defined in the rules->rulename->local section of the yaml file
 
 has 'local_attr' => (
     is => 'rw',
-    isa => 'ArrayRef',
+    isa => 'Data::Pairs',
 );
 
 =head3 local_rule
@@ -593,7 +636,7 @@ sub run {
 
     $self->class_load;
 
-    $self->global_attr($array->{global});
+    $self->global_attr(Data::Pairs->new($array->{global}));
 
     $self->attr($self->global_attr);
 
@@ -724,21 +767,25 @@ sub make_meta{
         $seen{$attr->name} = 1;
     }
 
-    foreach my $href (@{$self->attr}){
+    # Data Pairs is so much prettier
+    my @keys = $self->attr->get_keys();
 
-        while( my($k, $v) = each(%{$href})){
+    foreach my $k (@keys){
+        my($v) = $self->attr->get_values($k);
 
-            if(! exists $seen{$k}){
-                $meta->add_attribute($k => (is => 'rw'));
-            }
+        next if $k eq "INPUT";
+        next if $k eq "OUTPUT";
 
-            next unless $v;
-
-            my $template = $self->make_template($v);
-
-            my $text = $template->fill_in(HASH => {self => \$self});
-            $self->$k($text);
+        if(! exists $seen{$k}){
+            $meta->add_attribute($k => (is => 'rw'));
         }
+
+        next unless $v;
+
+        my $template = $self->make_template($v);
+
+        my $text = $template->fill_in(HASH => {self => \$self});
+        $self->$k($text);
     }
 
     $self->make_outdir if exists $seen{outdir};
@@ -782,9 +829,8 @@ sub dothings {
     my($self) = shift;
 
 
-    my(@keys, $override, $camel_key, $key, $process, $process_outdir);
+    my(@keys, $pairs,$camel_key, $key, $process_outdir);
 
-    $override = 0;
     @keys = keys %{$self->local_rule};
 
     #TODO make these more informative messages
@@ -805,11 +851,11 @@ sub dothings {
     }
 
     if (exists $self->local_rule->{$key}->{override} && $self->local_rule->{$key}->{override} == 1){
-        $override = 1;
+        $self->override_process(1);
     }
 
     if(exists $self->local_rule->{$key}->{local}){
-        $self->local_attr($self->local_rule->{$key}->{local});
+        $self->local_attr(Data::Pairs->new($self->local_rule->{$key}->{local}));
         $self->attr($self->local_attr);
         $self->make_meta;
     }
@@ -818,20 +864,9 @@ sub dothings {
         die print "There is no process key! Dying...\n";
     }
 
-    $process = $self->local_rule->{$key}->{process};
+    $self->process($self->local_rule->{$key}->{process});
 
-    $self->process($process);
-
-    if(exists $self->local_rule->{$key}->{before_meta}){
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char} ".$self->local_rule->{$key}->{before_meta}."\n";
-        print "$self->{comment_char}\n\n";
-    }
-    else{
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char} Starting $key\n";
-        print "$self->{comment_char}\n\n";
-    }
+    $self->write_rule_meta('before_meta');
 
     if($self->resample){
         $self->get_samples;
@@ -846,41 +881,71 @@ sub dothings {
         if(exists $self->local_rule->{$key}->{local}){
 
             print "$self->{comment_char} Local Variables:\n";
-            foreach my $href (@{$self->local_attr}){
 
-                while( my($k, $v) = each(%{$href})){
+            if($self->auto_input && $self->INPUT){
+                print "$self->{comment_char}\tINPUT: ".$self->INPUT."\n";
+            }
+
+            my @keys = $self->local_attr->get_keys();
+
+            foreach my $k (@keys){
+                my($v) = $self->local_attr->get_values($k);
+
+                if($k eq "OUTPUT" || $k eq "INPUT"){
+                    print "$self->{comment_char}\t$k: ".$v."\n";
+                }
+                else{
                     print "$self->{comment_char}\t$k: ".$self->$k."\n";
                 }
             }
         }
+
         if($self->resample){
             print "$self->{comment_char} Resampling Samples: ",join(", ", @{$self->samples})."\n";
         }
         print "$self->{comment_char}\n\n";
     }
 
-    $self->write_process($override, $process);
+    $self->write_process();
 
-
-    if(exists $self->local_rule->{$key}->{after_meta}){
-        print "\n$self->{comment_char}\n";
-        print "$self->{comment_char} ".$self->local_rule->{$key}->{after_meta}."\n";
-        print "$self->{comment_char}\n";
-    }
-    else{
-        print "\n$self->{comment_char}\n";
-        print "$self->{comment_char} Ending $key\n";
-        print "$self->{comment_char}\n";
-    }
+    #Write after meta
+    $self->write_rule_meta('after_meta');
 
     #Set bools back to false and reinitialize global vars
     $self->resample(0);
     $self->attr($self->global_attr);
     $self->make_meta;
+    $self->local_attr(Data::Pairs->new([]));
 
     if($self->enforce_struct){
         $self->indir($process_outdir);
     }
+}
+
+=head2 write_rule_meta
+
+=cut
+
+sub write_rule_meta{
+    my($self, $meta) = @_;
+
+    if(exists $self->local_rule->{$self->{key}}->{$meta}){
+        print "\n$self->{comment_char}\n";
+        print "$self->{comment_char} ".$self->local_rule->{$self->key}->{after_meta}."\n";
+        print "$self->{comment_char}\n\n";
+    }
+    else{
+        print "\n$self->{comment_char}\n";
+        if($meta eq "before_meta"){
+            print "$self->{comment_char} Starting $self->{key}\n";
+        }
+        elsif($meta eq "after_meta"){
+            print "$self->{comment_char} Ending $self->{key}\n";
+        }
+        print "$self->{comment_char}\n\n";
+    }
+
+
 }
 
 =head3 write_process
@@ -890,34 +955,63 @@ Fill in the template with the process
 =cut
 
 sub write_process{
-    my($self, $override, $process) = @_;
+    my($self) = @_;
 
-    my $template = $self->make_template($process);
+    my($template, $tmp, $newprocess, $sample);
 
-    if(!$override){
+    if(!$self->override_process){
 
         foreach my $sample (@{$self->samples}){
-            $template->fill_in(HASH => {self => \$self, sample => $sample}, OUTPUT => \*STDOUT);
-            print "\n";
+            my $data = {self => \$self, sample => $sample};
+            $self->process_template($data);
         }
     }
     else{
-        # Example
-        #my $tt =(<<'EOF');
-        #{
-        #foreach my $infile (@{$self->infiles}){
-           #$OUT .= $infile."\n";
-        #}
-        #}
-        $template->fill_in(HASH => {self => \$self}, OUTPUT => \*STDOUT);
-        print "\n";
+        my $data = {self => \$self};
+        $self->process_template($data);
     }
 
     if($self->wait){
         print "\nwait\n";
     }
 
+    if($self->auto_input){
+        $self->INPUT($self->OUTPUT);
+    }
+    else{
+        $self->INPUT('');
+    }
+    $self->OUTPUT('');
+
 }
+
+sub process_template{
+    my($self, $data) = @_;
+
+    my($tmp, $template);
+
+    $self->INPUT($self->local_attr->get_values('INPUT')) unless $self->INPUT;
+    $self->OUTPUT($self->local_attr->get_values('OUTPUT'));
+
+    #Get the INPUT template
+    if($self->INPUT){
+        $tmp = "$E{$self->INPUT}";
+        $template = $self->make_template($tmp);
+        $self->INPUT($template->fill_in(HASH => $data));
+    }
+
+    ##Get the output template
+    if($self->OUTPUT){
+        $tmp = "$E{$self->OUTPUT}";
+        $template = $self->make_template($tmp);
+        $self->OUTPUT($template->fill_in(HASH => $data));
+    }
+
+    $template = $self->make_template($self->process);
+    $template->fill_in(HASH => $data, OUTPUT => \*STDOUT);
+    print "\n\n";
+}
+
 
 __PACKAGE__->meta->make_immutable;
 
@@ -934,9 +1028,16 @@ BioX::Wrapper::Workflow is
 
 Jillian Rowe E<lt>jillian.e.rowe@gmail.comE<gt>
 
+=head1 Acknowledgements
+
+This module was originally developed at and for Weill Cornell Medical
+College in Qatar within ITS Advanced Computing Team. With approval from
+WCMC-Q, this information was generalized and put on github, for which
+the authors would like to express their gratitude.
+
 =head1 COPYRIGHT
 
-Copyright 2015- Jillian Rowe
+Copyright 2015- Weill Cornell Medical College in Qatar
 
 =head1 LICENSE
 
