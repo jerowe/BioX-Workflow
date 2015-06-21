@@ -648,11 +648,6 @@ sub run {
 
     if($self->verbose){
         print "$self->{comment_char}\n";
-        print "$self->{comment_char} Samples: ",join(", ", @{$self->samples})."\n";
-        print "$self->{comment_char}\n";
-    }
-    if($self->verbose){
-        print "$self->{comment_char}\n";
         print "$self->{comment_char} Starting Workflow\n";
         print "$self->{comment_char}\n";
     }
@@ -712,6 +707,12 @@ sub get_samples{
     my @basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
 
     $self->samples(\@basename);
+
+    if($self->verbose){
+        print "$self->{comment_char}\n";
+        print "$self->{comment_char} Samples: ",join(", ", @{$self->samples})."\n";
+        print "$self->{comment_char}\n";
+    }
 }
 
 =head3 load
