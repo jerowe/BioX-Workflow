@@ -1,12 +1,8 @@
 package BioX::Wrapper::Workflow::Drake;
 
 use Data::Dumper;
-use Data::Pairs;
-
 use Moose;
 extends 'BioX::Wrapper::Workflow';
-
-use Interpolation E => 'eval';
 
 =head1 NAME
 
@@ -14,12 +10,7 @@ BioX::Wrapper::Workflow::Writer::Drake - A very opinionated template based workf
 
 =head1 SYNOPSIS
 
-=head2 Attributes
-
-=cut
-
-
-=head2 Subroutines
+=head2 Things
 
 =head3 before run
 
@@ -43,49 +34,61 @@ Fill in the template with the process
 before 'write_process' => sub{
     my($self) = shift;
 
-    if($self->local_attr){
-        if((! $self->local_attr->get_values('INPUT')) && ! $self->local_attr->get_values('OUTPUT') ){
-            print "$self->{comment_char} There is no INPUT or OUTPUT!\n";
-        }
+    my $aref = $self->local_rule->{$self->key}->{local};
+    my(%seen, @keys);
+
+    foreach my $a (@$aref){
+       push @keys, keys %{ $aref->[$a] };
+    }
+    %seen = map{ $_ => 1 } @keys;
+
+    print Dumper(\%seen);
+
+    if(! exists $seen{'INPUT'} || ! exists $seen{'OUTPUT'} ){
+        die print "You must specify an INPUT or an OUTPUT!\n";
     }
 
-    my @tmp = split("\n", $self->process);
-    $self->process(join("\n\t", @tmp));
 };
 
+sub write_process{
+    my($self, $override, $process) = @_;
 
-sub process_template{
-    my($self, $data) = @_;
+    my $template = $self->make_template($process);
 
-    my($tmp, $template, $newprocess);
+    $process .= "{$self->OUTPUT} <- {$self->INPUT}\n";
 
-    $self->INPUT($self->local_attr->get_values('INPUT')) unless $self->INPUT;
-    $self->OUTPUT($self->local_attr->get_values('OUTPUT'));
+    if(!$override){
 
-    #Get the INPUT template
-    if($self->INPUT){
-        $tmp = "$E{$self->INPUT}";
-        $template = $self->make_template($tmp);
-        $self->INPUT($template->fill_in(HASH => $data));
+        foreach my $sample (@{$self->samples}){
+            $template->fill_in(HASH => {self => \$self, sample => $sample}, OUTPUT => \*STDOUT);
+            print "\n";
+        }
+    }
+    else{
+        # Example
+        #my $tt =(<<'EOF');
+        #{
+        #foreach my $infile (@{$self->infiles}){
+           #$OUT .= $infile."\n";
+        #}
+        #}
+        $template->fill_in(HASH => {self => \$self}, OUTPUT => \*STDOUT);
+        print "\n";
     }
 
-    #Get the output template
-    if($self->OUTPUT){
-        $tmp = "$E{$self->OUTPUT}";
-        $template = $self->make_template($tmp);
-        $self->OUTPUT($template->fill_in(HASH => $data));
+    if($self->wait){
+        print "\nwait\n";
     }
 
-    #This is exactly the same as the previous except for this one statement bah
-    $tmp = "$E{$self->OUTPUT} <- $E{$self->INPUT}\n\t";
-    $newprocess = $tmp.$self->process;
-    #
-
-    $template = $self->make_template($newprocess);
-    $template->fill_in(HASH => $data, OUTPUT => \*STDOUT);
-
-    print "\n\n";
 }
+
+after 'write_process' => sub{
+    my($self) = shift;
+
+    $self->INPUT('');
+    $self->OUTPUT('');
+};
+
 
 =head1 Acknowledgements
 

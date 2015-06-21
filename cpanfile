@@ -21,6 +21,7 @@ requires 'Class::Load';
 requires 'IO::File';
 requires 'Interpolation';
 requires 'Text::Template';
+requires 'Data::Pairs';
 
 # requires 'Some::Module', 'VERSION';
 
