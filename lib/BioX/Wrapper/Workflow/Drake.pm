@@ -18,8 +18,39 @@ BioX::Wrapper::Workflow::Writer::Drake - A very opinionated template based workf
 
 =cut
 
+=head3 full
+
+Print the whole workflow hardcoded. This is the default
+
+=cut
+
+has 'full' => (
+    is => 'rw',
+    isa => 'Bool',
+    default => 1,
+);
+
+=head3 min
+
+Print the workflow as 2 files.
+
+Run the drake things
+
+    drake --vars "SAMPLE=$sample" --workflow/workflow.drake
+
+workflow.drake
+
+=cut
+
+has 'min' => (
+    is => 'rw',
+    isa => 'Bool',
+    default => 0,
+);
 
 =head2 Subroutines
+
+Subroutines
 
 =head3 before run
 
@@ -57,13 +88,14 @@ before 'write_process' => sub{
 sub process_template{
     my($self, $data) = @_;
 
-    my($tmp, $template, $newprocess);
+    my($tmp, $template, $newprocess, $INPUT, $OUTPUT);
 
     $self->INPUT($self->local_attr->get_values('INPUT')) unless $self->INPUT;
     $self->OUTPUT($self->local_attr->get_values('OUTPUT'));
 
     #Get the INPUT template
     if($self->INPUT){
+        $INPUT = $self->INPUT;
         $tmp = "$E{$self->INPUT}";
         $template = $self->make_template($tmp);
         $self->INPUT($template->fill_in(HASH => $data));
@@ -71,6 +103,7 @@ sub process_template{
 
     #Get the output template
     if($self->OUTPUT){
+        $OUTPUT = $self->OUTPUT;
         $tmp = "$E{$self->OUTPUT}";
         $template = $self->make_template($tmp);
         $self->OUTPUT($template->fill_in(HASH => $data));
@@ -85,7 +118,13 @@ sub process_template{
     $template->fill_in(HASH => $data, OUTPUT => \*STDOUT);
 
     print "\n\n";
+
+    $self->INPUT($self->local_attr->get_values('INPUT'));
+    $self->OUTPUT($self->local_attr->get_values('OUTPUT'));
+
 }
+
+__PACKAGE__->meta->make_immutable;
 
 =head1 Acknowledgements
 
