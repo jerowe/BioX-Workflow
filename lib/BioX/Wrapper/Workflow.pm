@@ -648,11 +648,6 @@ sub run {
 
     if($self->verbose){
         print "$self->{comment_char}\n";
-        print "$self->{comment_char} Samples: ",join(", ", @{$self->samples})."\n";
-        print "$self->{comment_char}\n";
-    }
-    if($self->verbose){
-        print "$self->{comment_char}\n";
         print "$self->{comment_char} Starting Workflow\n";
         print "$self->{comment_char}\n";
     }
@@ -712,6 +707,12 @@ sub get_samples{
     my @basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
 
     $self->samples(\@basename);
+
+    if($self->verbose){
+        print "$self->{comment_char}\n";
+        print "$self->{comment_char} Samples: ",join(", ", @{$self->samples})."\n";
+        print "$self->{comment_char}\n";
+    }
 }
 
 =head3 load
@@ -883,7 +884,8 @@ sub dothings {
             print "$self->{comment_char} Local Variables:\n";
 
             if($self->auto_input && $self->INPUT){
-                print "$self->{comment_char}\tINPUT: ".$self->INPUT."\n";
+                #print "$self->{comment_char}\tINPUT: ".$self->INPUT."\n";
+                $self->local_attr->set('INPUT' => $self->INPUT);
             }
 
             my @keys = $self->local_attr->get_keys();
@@ -975,8 +977,11 @@ sub write_process{
         print "\nwait\n";
     }
 
+
     if($self->auto_input){
-        $self->INPUT($self->OUTPUT);
+        my($tmp) = $self->local_attr->get_values('OUTPUT');
+        $tmp =~ s/{\$self->outdir}|{\$self->{outdir}}/{\$self->indir}/;
+        $self->INPUT($tmp);
     }
     else{
         $self->INPUT('');
@@ -1009,6 +1014,10 @@ sub process_template{
 
     $template = $self->make_template($self->process);
     $template->fill_in(HASH => $data, OUTPUT => \*STDOUT);
+
+    $self->INPUT($self->local_attr->get_values('INPUT'));
+    $self->OUTPUT($self->local_attr->get_values('OUTPUT'));
+
     print "\n\n";
 }
 
