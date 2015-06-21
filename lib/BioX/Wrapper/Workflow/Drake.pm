@@ -19,6 +19,21 @@ The main documentation for this module is at L<BioX::Wrapper::Workflow>. This mo
     biox-workflow-drake.pl --workflow workflow.yml > workflow.drake
     drake --workflow workflow.drake  #with other functionality such as --jobs for asynchronous output, etc.
 
+More information about Drake can be found here L<https://github.com/Factual/drake>.
+
+=head2 Default Variables
+
+BioX::Wrapper::Workflow::Drake assumes your INPUT/OUTPUT and indir/outdirs are
+linked.
+
+This means the output from step1 is the input for step2.
+
+You can override this behavior by either declaring any of these values, or in the global
+variables set auto_input: 0, disable automatic indir/outdir naming with
+auto_name: 0, and disable automatically naming outdirectories by rule names with
+enforce_struct: 0.
+
+
 =head2 Example
 
 =head3 workflow.yml
@@ -49,9 +64,66 @@ The main documentation for this module is at L<BioX::Wrapper::Workflow>. This mo
             process: |
                 grep -i "VARB" {$self->indir}/{$sample}.grep_VARA.csv >> {$self->outdir}/{$sample}.grep_VARA.grep_VARB.csv || touch {$self->OUTPUT}
 
+=head3 Notes on the drake.yml
+
+Drake will stop everything if you're job returns with an exit code of anything
+besides 0. For this reason we have the last command have a command1 || command2
+syntax, so that even if we don't grep any "VARB" from the file the workflow
+could continue.
+
 =head3 Run it with default setup
 
     biox-workflow-drake.pl --workflow workflow.yml > workflow.full.drake
+
+=head3 Output with default setup
+
+I don't want to inlcude the whole file, but you get the idea
+
+    ;
+    ; Generated at: 2015-06-21T11:01:24
+    ; This file was generated with the following options
+    ;	--workflow	drake.yml
+    ;	--min	1
+    ;
+
+    ;
+    ; Samples: test1, test2
+    ;
+    ;
+    ; Starting Workflow
+    ;
+
+    ;
+    ; Starting backup
+    ;
+
+
+    ;
+    ; Variables
+    ; Indir: /home/guests/jir2004/workflow
+    ; Outdir: /home/guests/jir2004/workflow/output/backup
+    ; Local Variables:
+    ;	INPUT: {$self->indir}/{$sample}.csv
+    ;	OUTPUT: {$self->outdir}/{$sample}.csv
+    ;	thing: other thing
+    ;
+
+    /home/guests/jir2004/workflow/output/backup/$[SAMPLE].csv <- /home/guests/jir2004/workflow/$[SAMPLE].csv
+        cp $INPUT $OUTPUT
+
+
+    ;
+    ; Ending backup
+    ;
+
+
+    ;
+    ; Starting grep_VARA
+    ;
+
+
+Run drake
+
     drake --workflow workflow.full.drake
 
     The following steps will be run, in order:
@@ -88,6 +160,15 @@ The main documentation for this module is at L<BioX::Wrapper::Workflow>. This mo
 
 =head3 Run in minified mode
 
+As an alternative you can run this with the --min option, which instead of
+printing out each workflow prints out only one, and creates a run-workflow.sh
+which has all of your environmental variables.
+
+This option is preferable if running on an HPC cluster with many nodes.
+
+This WILL break with use of --resample, either local or global. You need to
+split up your workflows as opposed to using the --resample option.
+
     biox-workflow-drake.pl --workflow workflow.yml --min 1 > workflow.drake #This also creates the run-workflow.sh in the same directory
     ./run-workflow.sh
 
@@ -97,16 +178,12 @@ The main documentation for this module is at L<BioX::Wrapper::Workflow>. This mo
     2015-06-21 14:02:47,568 INFO
     2015-06-21 14:02:47,570 INFO --- 0. Running (timestamped): /home/user/workflow/output/backup/test1.csv <- /home/user/workflow/test1.csv
     2015-06-21 14:02:47,592 INFO --- 0: /home/user/workflow/output/backup/test1.csv <- /home/user/workflow/test1.csv -> done in 0.02s
-    2015-06-21 14:02:47,597 INFO
-    2015-06-21 14:02:47,598 INFO --- 1. Running (timestamped): /home/user/workflow/output/grep_vara/test1.grep_VARA.csv <- /home/user/workflow/output/backup/test1.csv
-    2015-06-21 14:02:47,612 INFO --- 1: /home/user/workflow/output/grep_vara/test1.grep_VARA.csv <- /home/user/workflow/output/backup/test1.csv -> done in 0.01s
-    2015-06-21 14:02:47,614 INFO
-    2015-06-21 14:02:47,615 INFO --- 2. Running (timestamped): /home/user/workflow/output/grep_varb/test1.grep_VARA.grep_VARB.csv <- /home/user/workflow/output/grep_vara/test1.grep_VARA.csv
-    2015-06-21 14:02:47,626 INFO --- 2: /home/user/workflow/output/grep_varb/test1.grep_VARA.grep_VARB.csv <- /home/user/workflow/output/grep_vara/test1.grep_VARA.csv -> done in 0.01s
-    2015-06-21 14:02:47,628 INFO Done (3 steps run).
 
+    #So on and so forth
 
+If you look in the example directory you will see a few png files, these are outputs of the drake workflow.
 
+ =cut
 
 =head1 Acknowledgements
 
@@ -114,6 +191,10 @@ This module was originally developed at and for Weill Cornell Medical
 College in Qatar within ITS Advanced Computing Team. With approval from
 WCMC-Q, this information was generalized and put on github, for which
 the authors would like to express their gratitude.
+
+=head1 Inline Code Documentation
+
+You shouldn't need these, but if you do here they are.
 
 =head2 Attributes
 

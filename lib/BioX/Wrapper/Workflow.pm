@@ -44,15 +44,26 @@ This module was written with Bioinformatics workflows in mind, but should be ext
 
 =head1 Philosophy
 
-Most bioinformatics workflows involve starting with a set of samples, and processing those samples in one or more steps. Also, most bioinformatics workflows are bash based, and no one wants to reinvent the wheel to rewrite their code in perl/python/whatever.
+Most bioinformatics workflows involve starting with a set of samples, and
+processing those samples in one or more steps. Also, most bioinformatics
+workflows are bash based, and no one wants to reinvent the wheel to rewrite
+their code in perl/python/whatever.
 
-For example with our samples test1.vcf and test2.vcf, we want to bgzip and annotate using snpeff, and then parse the output using vcf-to-table.pl (shameless plug for BioX::Wrapper::Annovar).
+For example with our samples test1.vcf and test2.vcf, we want to bgzip and
+annotate using snpeff, and then parse the output using vcf-to-table.pl
+(shameless plug for BioX::Wrapper::Annovar).
 
-BioX::Wrapper::Workflow assumes your have a set of inputs, known as samples, and these inputs will carry on through your pipeline. There are some exceptions to this, which we will explore with the resample option.
+BioX::Wrapper::Workflow assumes your have a set of inputs, known as samples,
+and these inputs will carry on through your pipeline. There are some exceptions
+to this, which we will explore with the resample option.
 
-It also makes several assumtions about your output structure. It assumes you have each of your processes/rules outputting to a distinct directory.
+It also makes several assumtions about your output structure. It assumes you
+have each of your processes/rules outputting to a distinct directory.
 
-These directories will be created and automatically named based on your process name. You can disable this and make your own out directories by either specifiying autoname: 1 in your global, in any of the local rules to disable it for that rule, or by specifying an outdirectory.
+These directories will be created and automatically named based on your process
+name. You can disable this and make your own out directories by either
+specifiying auto_name: 1 in your global, in any of the local rules to disable
+it for that rule, or by specifying an outdirectory.
 
 =head1 A Simple Example
 
@@ -224,20 +235,33 @@ So on and so forth.
 
 =head1 Customizing your output and special variables
 
-BioX::Wrapper::Workflow uses a few conventions and special variables. As you probably noticed these are indir, outdir, infiles, and file_rule. In
-addition sample is the currently scoped sample. Infiles is not used by default, but is simply a store of all the original samples found when the
-script is first run, before any processes. In the above example the $self->infiles would evaluate as ['test1.csv', 'test2.csv'].
+BioX::Wrapper::Workflow uses a few conventions and special variables. As you
+probably noticed these are indir, outdir, infiles, and file_rule. In addition
+sample is the currently scoped sample. Infiles is not used by default, but is
+simply a store of all the original samples found when the script is first run,
+before any processes. In the above example the $self->infiles would evaluate as
+['test1.csv', 'test2.csv'].
 
-Variables are interpolated using L<Interpolation> and L<Text::Template>. All variables, unless explictly defined with "$my variable = "stuff"" in your
-process key, must be referenced with $self, and surrounded with brackets {}. Instead of $self->outdir, it should be {$self->outdir}. It is also
-possible to define variables with other variables in this way. Everything is referenced with $self in order to dynamically pass variables to
-Text::Template. The sample variable, $sample, is the exception because it is defined in the loop.
+Variables are interpolated using L<Interpolation> and L<Text::Template>. All
+variables, unless explictly defined with "$my variable = "stuff"" in your
+process key, must be referenced with $self, and surrounded with brackets {}.
+Instead of $self->outdir, it should be {$self->outdir}. It is also possible to
+define variables with other variables in this way. Everything is referenced
+with $self in order to dynamically pass variables to Text::Template. The sample
+variable, $sample, is the exception because it is defined in the loop. In
+addition you can create an INPUT/OUTPUT variables to clean up your process
+code.
 
     ---
     global:
         - ROOT: /home/user/workflow
         - indir: {$self->ROOT}
         - outdir: {$self->indir}/output
+    rules:
+        - backup:
+            local:
+                - INPUT: {$self->indir}/{$sample}.in
+                - OUTPUT: {$self->outdir}/{$sample}.out
 
 Your variables must be defined in an appropriate order.
 
@@ -299,7 +323,7 @@ BioX::Wrapper::Workflow will create a directory structure based on your rule nam
     /rule2
     /rule3
 
-If you don't like this you can globally disable autoname (autoname: 0), or simply defined indir or outdir within your global variables. If using the
+If you don't like this you can globally disable auto_name (auto_name: 0), or simply defined indir or outdir within your global variables. If using the
 second method it is probably a good idea to also defined a ROOT_DIR in your global variables.
 
 =head2 Other variables
@@ -368,9 +392,9 @@ has 'resample' => (
      default => 0,
 );
 
-=head3 autoname
+=head3 auto_name
 
-Autoname - Create outdirectory based on rulename
+Auto_name - Create outdirectory based on rulename
 
 global:
     - outdir: /home/user/workflow/processed
@@ -383,7 +407,7 @@ Would create your directory structure /home/user/workflow/processed/normalize (i
 
 =cut
 
-has 'autoname' => (
+has 'auto_name' => (
      is => 'rw',
      isa => 'Bool',
      default => 1,
@@ -391,7 +415,7 @@ has 'autoname' => (
 
 =head3 auto_input
 
-This is similar to the autoname function in the BioX::Wrapper::Workflow.
+This is similar to the auto_name function in the BioX::Wrapper::Workflow.
 Instead this says each input should be the previous output.
 
 =cut
@@ -400,6 +424,18 @@ has 'auto_input' => (
     is => 'rw',
     isa => 'Bool',
     default => 1,
+);
+
+=head3 enforce_struct
+
+Enforce a particular workflow where the outdirectory (outdir) from the previous rule is the indirectory for the current
+
+=cut
+
+has 'enforce_struct' => (
+     is => 'rw',
+     isa => 'Bool',
+     default => 1,
 );
 
 =head3 verbose
@@ -426,17 +462,6 @@ has 'wait' => (
      default => 1,
 );
 
-=head3 enforce_struct
-
-Enforce a particular workflow where the outdirectory (outdir) from the previous rule is the indirectory for the current
-
-=cut
-
-has 'enforce_struct' => (
-     is => 'rw',
-     isa => 'Bool',
-     default => 1,
-);
 
 =head3 override_process
 
@@ -845,7 +870,7 @@ sub dothings {
     $self->key($key);
     $camel_key = decamelize($key);
 
-    if($self->autoname){
+    if($self->auto_name){
         $self->outdir($self->outdir."/$camel_key");
         $process_outdir = $self->outdir;
         $self->make_outdir();
@@ -962,7 +987,6 @@ sub write_process{
     my($template, $tmp, $newprocess, $sample);
 
     if(!$self->override_process){
-
         foreach my $sample (@{$self->samples}){
             my $data = {self => \$self, sample => $sample};
             $self->process_template($data);
