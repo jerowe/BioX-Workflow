@@ -1,20 +1,20 @@
-package BioX::Wrapper::Workflow::Drake;
+package BioX::Workflow::Drake;
 
 use Data::Dumper;
 use Data::Pairs;
 
 use Moose;
-extends 'BioX::Wrapper::Workflow';
+extends 'BioX::Workflow';
 
 use Interpolation E => 'eval';
 
 =head1 NAME
 
-BioX::Wrapper::Workflow::Writer::Drake - A very opinionated template based bioinformatics workflow writer for Drake.
+BioX::Workflow::Writer::Drake - A very opinionated template based bioinformatics workflow writer for Drake.
 
 =head1 SYNOPSIS
 
-The main documentation for this module is at L<BioX::Wrapper::Workflow>. This module extends Workflow in order to add functionality for outputing workflows in drake format.
+The main documentation for this module is at L<BioX::Workflow>. This module extends Workflow in order to add functionality for outputing workflows in drake format.
 
     biox-workflow-drake.pl --workflow workflow.yml > workflow.drake
     drake --workflow workflow.drake  #with other functionality such as --jobs for asynchronous output, etc.
@@ -23,7 +23,7 @@ More information about Drake can be found here L<https://github.com/Factual/drak
 
 =head2 Default Variables
 
-BioX::Wrapper::Workflow::Drake assumes your INPUT/OUTPUT and indir/outdirs are
+BioX::Workflow::Drake assumes your INPUT/OUTPUT and indir/outdirs are
 linked.
 
 This means the output from step1 is the input for step2.

@@ -1,4 +1,4 @@
-package BioX::Wrapper::Workflow;
+package BioX::Workflow;
 
 use 5.008_005;
 our $VERSION = '0.01';
@@ -32,7 +32,7 @@ $ENV{TERM}='xterm-256color';
 
 =head1 NAME
 
-BioX::Wrapper::Workflow - A very opinionated template based workflow writer.
+BioX::Workflow - A very opinionated template based workflow writer.
 
 =head1 SYNOPSIS
 
@@ -53,7 +53,7 @@ For example with our samples test1.vcf and test2.vcf, we want to bgzip and
 annotate using snpeff, and then parse the output using vcf-to-table.pl
 (shameless plug for BioX::Wrapper::Annovar).
 
-BioX::Wrapper::Workflow assumes your have a set of inputs, known as samples,
+BioX::Workflow assumes your have a set of inputs, known as samples,
 and these inputs will carry on through your pipeline. There are some exceptions
 to this, which we will explore with the resample option.
 
@@ -235,7 +235,7 @@ So on and so forth.
 
 =head1 Customizing your output and special variables
 
-BioX::Wrapper::Workflow uses a few conventions and special variables. As you
+BioX::Workflow uses a few conventions and special variables. As you
 probably noticed these are indir, outdir, infiles, and file_rule. In addition
 sample is the currently scoped sample. Infiles is not used by default, but is
 simply a store of all the original samples found when the script is first run,
@@ -316,7 +316,7 @@ template. Make sure to use the previously defined $OUT. For more information see
 
 =head2 Directory Structure
 
-BioX::Wrapper::Workflow will create a directory structure based on your rule name, decamelized, and your globally defined outdir.
+BioX::Workflow will create a directory structure based on your rule name, decamelized, and your globally defined outdir.
 
 /path/to/outdir
     /rule1
@@ -415,7 +415,7 @@ has 'auto_name' => (
 
 =head3 auto_input
 
-This is similar to the auto_name function in the BioX::Wrapper::Workflow.
+This is similar to the auto_name function in the BioX::Workflow.
 Instead this says each input should be the previous output.
 
 =cut
@@ -1055,7 +1055,7 @@ __END__
 
 =head1 DESCRIPTION
 
-BioX::Wrapper::Workflow is
+BioX::Workflow - A very opinionated template based workflow writer.
 
 =head1 AUTHOR
 
