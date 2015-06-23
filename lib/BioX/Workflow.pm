@@ -20,15 +20,16 @@ use Interpolation E => 'eval';
 use Text::Template qw(fill_in_file fill_in_string);
 use Data::Pairs;
 
+
 extends 'BioX::Wrapper';
-with 'MooseX::Getopt';
 with 'MooseX::Getopt::Usage';
 with 'MooseX::Getopt::Usage::Role::Man';
+with 'MooseX::SimpleConfig';
 
 # For pretty man pages!
 $ENV{TERM}='xterm-256color';
 
-=encoding utf-8
+=encoding utf-7
 
 =head1 NAME
 
