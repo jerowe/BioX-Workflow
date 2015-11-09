@@ -1095,6 +1095,11 @@ sub write_process{
                     $self->indir($tt);
                     $DB::single=2;
                 }
+                else{
+                    $tt = $self->indir;
+                    $tt = "$tt/$sample";
+                    $self->indir($tt);
+                }
             }
             my $data = {self => \$self, sample => $sample};
             $self->process_template($data);

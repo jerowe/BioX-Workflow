@@ -9,7 +9,7 @@ rules:
     - copy1:
         process: |
             echo "Working on {$self->{indir}}/{$sample}/{$sample}.csv"
-            cp "{$self->{indir}}/{$sample}/{$sample}.csv" "{$self->{outdir}}/{$sample}.csv"
+            cp "{$self->{indir}}/{$sample}.csv" "{$self->{outdir}}/{$sample}.csv"
     - copy2:
         process: |
             echo "Working on {$self->{indir}}/{$sample}.csv"
