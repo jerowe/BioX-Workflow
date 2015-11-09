@@ -361,6 +361,26 @@ The default is to find samples by filename
         SAMPLE2_r1.fastq.gz
         SAMPLE2_r2.fastq.gz
 
+## by\_sample\_outdir
+
+    outdir/
+    /outdir/SAMPLE1
+        /rule1
+        /rule2
+        /rule3
+    /outdir/SAMPLE2
+        /rule1
+        /rule2
+        /rule3
+
+Instead of
+
+    /outdir
+        /rule1
+        /rule2
+
+This feature is not particularly well supported, and may break when mixed with other methods, particularly --resample
+
 ### auto\_name
 
 Auto\_name - Create outdirectory based on rulename

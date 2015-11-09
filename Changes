@@ -1,6 +1,8 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+
+0.03  2015-11-09 12:54:58 GST
     - Added in some support for different output structures
 
 0.02  2015-11-09 11:58:29 GST
