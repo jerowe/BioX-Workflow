@@ -1,6 +1,7 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+    - Added in some support for different output structures
 
 0.02  2015-11-09 11:58:29 GST
     - Commiting bug fix. INPUT/OUTPUT should not be required

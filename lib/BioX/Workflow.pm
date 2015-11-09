@@ -414,6 +414,35 @@ has 'find_by_dir' => (
     documentation => q{Use this option when you sample names are directories},
 );
 
+=head2 by_sample_outdir
+
+    outdir/
+    /outdir/SAMPLE1
+        /rule1
+        /rule2
+        /rule3
+    /outdir/SAMPLE2
+        /rule1
+        /rule2
+        /rule3
+
+Instead of
+
+    /outdir
+        /rule1
+        /rule2
+
+This feature is not particularly well supported, and may break when mixed with other methods, particularly --resample
+
+=cut
+
+has 'by_sample_outdir' => (
+    is => 'rw',
+    isa => 'Bool',
+    default => 0,
+    documentation => q{When you want your output by sample},
+);
+
 =head3 auto_name
 
 Auto_name - Create outdirectory based on rulename
@@ -682,6 +711,9 @@ sub run {
     my($self) = shift;
 
     #print "#!/bin/bash\n\n";
+    #if($self->by_sample_outdir){
+        #$self->auto_name(0);
+    #}
 
     $self->print_opts;
 
@@ -759,14 +791,14 @@ sub get_samples{
     if($self->find_by_dir){
         $DB::single=2;
         @whole = find(directory => name => qr/$text/, maxdepth => 1, in => $self->indir);
-        $self->samples(\@whole);
+        @basename = map {  basename($_) }  @whole ;
     }
     else{
         @whole = find(file => name => qr/$text/, maxdepth => 1, in => $self->indir);
         @basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
-        $self->samples(\@basename);
     }
 
+    $self->samples(\@basename);
     $self->infiles(\@whole);
     $DB::single=2;
 
@@ -918,7 +950,7 @@ sub dothings {
     if($self->auto_name){
         $self->outdir($self->outdir."/$camel_key");
         $process_outdir = $self->outdir;
-        $self->make_outdir();
+        $self->make_outdir() unless $self->by_sample_outdir;
     }
 
     if (exists $self->local_rule->{$key}->{override} && $self->local_rule->{$key}->{override} == 1){
@@ -1028,15 +1060,46 @@ Fill in the template with the process
 
 =cut
 
+has 'pkey' => (
+    is => 'rw',
+    isa => 'Str',
+    default => '',
+    predicate => 'has_pkey'
+);
+
 sub write_process{
     my($self) = @_;
 
-    my($template, $tmp, $newprocess, $sample);
+    my($template, $tmp, $newprocess, $sample, $origout, $origin);
+
+    $origout = $self->outdir;
+    $origin = $self->indir;
+
+    $DB::single = 2;
 
     if(!$self->override_process){
         foreach my $sample (@{$self->samples}){
+            if($self->by_sample_outdir){
+                my($tt, $key);
+                $tt = $self->outdir;
+                $key = $self->key;
+                $tt =~ s/$key/$sample\/$key/;
+                $self->outdir($tt);
+                $self->make_outdir;
+                $DB::single=2;
+
+                if($self->has_pkey){
+                    $tt = $self->indir;
+                    $key = $self->pkey;
+                    $tt =~ s/$key/$sample\/$key/;
+                    $self->indir($tt);
+                    $DB::single=2;
+                }
+            }
             my $data = {self => \$self, sample => $sample};
             $self->process_template($data);
+            $self->outdir($origout);
+            $self->indir($origin);
         }
     }
     else{
@@ -1066,6 +1129,7 @@ sub write_process{
     }
     $self->OUTPUT('');
 
+    $self->pkey($self->key);
 }
 
 sub process_template{

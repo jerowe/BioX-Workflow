@@ -1,9 +1,18 @@
 ---
 global:
-    - indir: /home/jillian/projects/perl/BioX-Workflow/example/bydir
+    - indir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA
     - outdir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT
     - file_rule: (SAMPLE.*)$
+    - by_sample_outdir: 1
+    - find_by_dir: 1
 rules:
-    - cat:
+    - copy1:
         process: |
-            echo "Working on {$self->{indir}}/{$sample}"
+            echo "Working on {$self->{indir}}/{$sample}/{$sample}.csv"
+            cp "{$self->{indir}}/{$sample}/{$sample}.csv" "{$self->{outdir}}/{$sample}.csv"
+    - copy2:
+        process: |
+            echo "Working on {$self->{indir}}/{$sample}.csv"
+            cp "{$self->{indir}}/{$sample}.csv" "{$self->{outdir}}/{$sample}.csv"
+
+
