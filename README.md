@@ -349,6 +349,18 @@ Chances are you don't want to set resample to try, because these files probably 
 One example of doing so, shown in the gemini.yml in the examples directory, is looking for uncompressed files, .vcf extension, compressing them, and
 then resampling based on the .vcf.gz extension.
 
+## find\_by\_dir
+
+Use this option when you sample names are by directory
+The default is to find samples by filename
+
+    /SAMPLE1
+        SAMPLE1_r1.fastq.gz
+        SAMPLE1_r2.fastq.gz
+    /SAMPLE2
+        SAMPLE2_r1.fastq.gz
+        SAMPLE2_r2.fastq.gz
+
 ### auto\_name
 
 Auto\_name - Create outdirectory based on rulename
@@ -492,7 +504,7 @@ BioX::Workflow - A very opinionated template based workflow writer.
 
 # AUTHOR
 
-Jillian Rowe <jillian.e.rowe@gmail.com>
+Jillian Rowe &lt;jillian.e.rowe@gmail.com>
 
 # Acknowledgements
 

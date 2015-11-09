@@ -1,6 +1,8 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+
+0.02  2015-11-09 11:58:29 GST
     - Commiting bug fix. INPUT/OUTPUT should not be required
 
 0.01  2015-06-23 12:41:10 AST
