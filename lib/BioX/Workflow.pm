@@ -7,7 +7,6 @@ use Moose;
 use File::Find::Rule;
 use File::Basename;
 use File::Path qw(make_path remove_tree);
-use File::Find::Rule;
 use Cwd;
 use Data::Dumper;
 use List::Compare;
@@ -19,6 +18,7 @@ use IO::File;
 use Interpolation E => 'eval';
 use Text::Template qw(fill_in_file fill_in_string);
 use Data::Pairs;
+use Carp::Always;
 
 
 extends 'BioX::Wrapper';
@@ -393,6 +393,27 @@ has 'resample' => (
      default => 0,
 );
 
+=head2 find_by_dir
+
+Use this option when you sample names are by directory
+The default is to find samples by filename
+
+    /SAMPLE1
+        SAMPLE1_r1.fastq.gz
+        SAMPLE1_r2.fastq.gz
+    /SAMPLE2
+        SAMPLE2_r1.fastq.gz
+        SAMPLE2_r2.fastq.gz
+
+=cut
+
+has 'find_by_dir' => (
+    is => 'rw',
+    isa => 'Bool',
+    default => 0,
+    documentation => q{Use this option when you sample names are directories},
+);
+
 =head3 auto_name
 
 Auto_name - Create outdirectory based on rulename
@@ -493,10 +514,18 @@ Special variables that can have input/output
 
 =cut
 
-has ['INPUT', 'OUTPUT'] =>(
+has 'INPUT' =>(
     is => 'rw',
     isa => 'Str',
     default => '',
+    predicate => 'has_INPUT',
+);
+
+has 'OUTPUT' =>(
+    is => 'rw',
+    isa => 'Str',
+    default => '',
+    predicate => 'has_OUTPUT',
 );
 
 =head3 file_rule
@@ -723,16 +752,28 @@ Could have
 
 sub get_samples{
     my($self) = shift;
+    my(@whole, @basename, $text);
 
-    my $text = $self->file_rule;
+    $text = $self->file_rule;
 
-    my @whole = find(file => name => qr/$text/, maxdepth => 1, in => $self->indir);
+    if($self->find_by_dir){
+        $DB::single=2;
+        @whole = find(directory => name => qr/$text/, maxdepth => 1, in => $self->indir);
+        $self->samples(\@whole);
+    }
+    else{
+        @whole = find(file => name => qr/$text/, maxdepth => 1, in => $self->indir);
+        @basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
+        $self->samples(\@basename);
+    }
 
     $self->infiles(\@whole);
+    $DB::single=2;
 
-    my @basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
+    #@basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
 
-    $self->samples(\@basename);
+    #$self->samples(\@basename);
+    #$DB::single=2;
 
     if($self->verbose){
         print "$self->{comment_char}\n";
@@ -856,7 +897,10 @@ sub dothings {
     my($self) = shift;
 
 
+    $DB::single=2;
     my(@keys, $pairs,$camel_key, $key, $process_outdir);
+
+    $self->local_attr(Data::Pairs->new([]));
 
     @keys = keys %{$self->local_rule};
 
@@ -882,6 +926,7 @@ sub dothings {
     }
 
     if(exists $self->local_rule->{$key}->{local}){
+        $DB::single=2;
         $self->local_attr(Data::Pairs->new($self->local_rule->{$key}->{local}));
         $self->attr($self->local_attr);
         $self->make_meta;
@@ -909,6 +954,7 @@ sub dothings {
 
             print "$self->{comment_char} Local Variables:\n";
 
+            $DB::single=2;
             if($self->auto_input && $self->INPUT){
                 #print "$self->{comment_char}\tINPUT: ".$self->INPUT."\n";
                 $self->local_attr->set('INPUT' => $self->INPUT);
@@ -1003,10 +1049,17 @@ sub write_process{
     }
 
 
-    if($self->auto_input){
+    $DB::single=2;
+    my $outdir = $self->outdir;
+    my $indir = $self->indir;
+    if($self->auto_input && $self->local_attr->exists('OUTPUT')){
+        $DB::single=2;
         my($tmp) = $self->local_attr->get_values('OUTPUT');
-        $tmp =~ s/{\$self->outdir}|{\$self->{outdir}}/{\$self->indir}/;
+        #$tmp =~ s/{\$self->outdir}|{\$self->{outdir}}/{\$self->indir}/;
+        #$tmp =~ s/{\$self->outdir}|{\$self->{outdir}}/{\$self->indir}/;
+        $tmp =~ s/$outdir/$indir/;
         $self->INPUT($tmp);
+        $DB::single=2;
     }
     else{
         $self->INPUT('');
@@ -1020,21 +1073,29 @@ sub process_template{
 
     my($tmp, $template);
 
-    $self->INPUT($self->local_attr->get_values('INPUT')) unless $self->INPUT;
-    $self->OUTPUT($self->local_attr->get_values('OUTPUT'));
+    $DB::single=2;
+    #$self->INPUT($self->local_attr->get_values('INPUT')) unless $self->INPUT;
+    #$self->OUTPUT($self->local_attr->get_values('OUTPUT'));
+    $DB::single=2;
 
     #Get the INPUT template
-    if($self->INPUT){
+    if($self->has_INPUT){
         $tmp = "$E{$self->INPUT}";
         $template = $self->make_template($tmp);
         $self->INPUT($template->fill_in(HASH => $data));
     }
+    elsif($self->local_attr->exists('INPUT')){
+        $self->INPUT($self->local_attr->get_values('INPUT'));
+    }
 
     ##Get the output template
-    if($self->OUTPUT){
+    if($self->has_OUTPUT){
         $tmp = "$E{$self->OUTPUT}";
         $template = $self->make_template($tmp);
         $self->OUTPUT($template->fill_in(HASH => $data));
+    }
+    elsif($self->local_attr->exists('OUTPUT')){
+        $self->OUTPUT($self->local_attr->get_values('OUTPUT'));
     }
 
     $template = $self->make_template($self->process);

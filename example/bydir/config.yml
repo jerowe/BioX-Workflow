@@ -1,0 +1,9 @@
+---
+global:
+    - indir: /home/jillian/projects/perl/BioX-Workflow/example/bydir
+    - outdir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT
+    - file_rule: (SAMPLE.*)$
+rules:
+    - cat:
+        process: |
+            echo "Working on {$self->{indir}}/{$sample}"
