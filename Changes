@@ -1,6 +1,7 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+    - Commiting bug fix. INPUT/OUTPUT should not be required
 
 0.01  2015-06-23 12:41:10 AST
     - Initial release
