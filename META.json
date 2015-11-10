@@ -43,6 +43,7 @@
       "runtime" : {
          "requires" : {
             "BioX::Wrapper" : "0",
+            "Carp::Always" : "0",
             "Class::Load" : "0",
             "Cwd" : "0",
             "Data::Dumper" : "0",
@@ -83,7 +84,7 @@
          "web" : "https://bitbucket.org/jerowe/biox-workflow"
       }
    },
-   "version" : "0.04",
+   "version" : "0.05",
    "x_contributors" : [
       "Jillian Rowe <jir2004@qatar-med.cornell.edu>"
    ]

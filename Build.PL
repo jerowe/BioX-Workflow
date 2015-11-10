@@ -18,12 +18,13 @@ my %module_build_args = (
     "Jillian Rowe <jillian.e.rowe\@gmail.com>"
   ],
   "dist_name" => "BioX-Workflow",
-  "dist_version" => "0.04",
+  "dist_version" => "0.05",
   "license" => "perl",
   "module_name" => "BioX::Workflow",
   "recursive_test_files" => 1,
   "requires" => {
     "BioX::Wrapper" => 0,
+    "Carp::Always" => 0,
     "Class::Load" => 0,
     "Cwd" => 0,
     "Data::Dumper" => 0,

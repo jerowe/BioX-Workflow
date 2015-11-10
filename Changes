@@ -1,6 +1,8 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+
+0.05  2015-11-10 11:53:21 GST
     - Missing carp::always
     - Commited bug fix with camelized rules - rule_R1 was being changed to rule_r1 in file changes
 
