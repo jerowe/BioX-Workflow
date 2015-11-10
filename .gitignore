@@ -6,3 +6,5 @@ MYMETA.*
 !META.json
 /.prove
 /example/.drake
+/local
+/local*

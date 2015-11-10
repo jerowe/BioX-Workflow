@@ -23,6 +23,8 @@ requires 'Interpolation';
 requires 'Text::Template';
 requires 'Data::Pairs';
 
+requires 'List::Compare';
+
 # requires 'Some::Module', 'VERSION';
 
 on test => sub {
