@@ -18,7 +18,7 @@ my %module_build_args = (
     "Jillian Rowe <jillian.e.rowe\@gmail.com>"
   ],
   "dist_name" => "BioX-Workflow",
-  "dist_version" => "0.03",
+  "dist_version" => "0.04",
   "license" => "perl",
   "module_name" => "BioX::Workflow",
   "recursive_test_files" => 1,
@@ -34,6 +34,7 @@ my %module_build_args = (
     "File::Path" => 0,
     "IO::File" => 0,
     "Interpolation" => 0,
+    "List::Compare" => 0,
     "Moose" => 0,
     "MooseX::Getopt" => 0,
     "MooseX::Getopt::Usage" => 0,

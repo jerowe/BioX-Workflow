@@ -53,6 +53,7 @@
             "File::Path" : "0",
             "IO::File" : "0",
             "Interpolation" : "0",
+            "List::Compare" : "0",
             "Moose" : "0",
             "MooseX::Getopt" : "0",
             "MooseX::Getopt::Usage" : "0",
@@ -82,7 +83,7 @@
          "web" : "https://bitbucket.org/jerowe/biox-workflow"
       }
    },
-   "version" : "0.03",
+   "version" : "0.04",
    "x_contributors" : [
       "Jillian Rowe <jir2004@qatar-med.cornell.edu>"
    ]
