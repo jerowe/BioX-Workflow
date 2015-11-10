@@ -545,15 +545,13 @@ Special variables that can have input/output
 
 has 'INPUT' =>(
     is => 'rw',
-    isa => 'Str',
-    default => '',
+    isa => 'Str|Undef',
     predicate => 'has_INPUT',
 );
 
 has 'OUTPUT' =>(
     is => 'rw',
-    isa => 'Str',
-    default => '',
+    isa => 'Str|Undef',
     predicate => 'has_OUTPUT',
 );
 
@@ -789,7 +787,7 @@ sub get_samples{
     $text = $self->file_rule;
 
     if($self->find_by_dir){
-        $DB::single=2;
+        #$DB::single=2;
         @whole = find(directory => name => qr/$text/, maxdepth => 1, in => $self->indir);
         @basename = map {  basename($_) }  @whole ;
     }
@@ -800,12 +798,6 @@ sub get_samples{
 
     $self->samples(\@basename);
     $self->infiles(\@whole);
-    $DB::single=2;
-
-    #@basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
-
-    #$self->samples(\@basename);
-    #$DB::single=2;
 
     if($self->verbose){
         print "$self->{comment_char}\n";
@@ -929,7 +921,7 @@ sub dothings {
     my($self) = shift;
 
 
-    $DB::single=2;
+    #$DB::single=2;
     my(@keys, $pairs,$camel_key, $key, $process_outdir);
 
     $self->local_attr(Data::Pairs->new([]));
@@ -1062,8 +1054,7 @@ Fill in the template with the process
 
 has 'pkey' => (
     is => 'rw',
-    isa => 'Str',
-    default => '',
+    isa => 'Str|Undef',
     predicate => 'has_pkey'
 );
 
@@ -1099,8 +1090,10 @@ sub write_process{
                     $tt = $self->indir;
                     $tt = "$tt/$sample";
                     $self->indir($tt);
+                    $DB::single=2;
                 }
             }
+            $DB::single=2;
             my $data = {self => \$self, sample => $sample};
             $self->process_template($data);
             $self->outdir($origout);
@@ -1145,7 +1138,6 @@ sub process_template{
     $DB::single=2;
     #$self->INPUT($self->local_attr->get_values('INPUT')) unless $self->INPUT;
     #$self->OUTPUT($self->local_attr->get_values('OUTPUT'));
-    $DB::single=2;
 
     #Get the INPUT template
     if($self->has_INPUT){
@@ -1154,7 +1146,12 @@ sub process_template{
         $self->INPUT($template->fill_in(HASH => $data));
     }
     elsif($self->local_attr->exists('INPUT')){
+        $DB::single=2;
         $self->INPUT($self->local_attr->get_values('INPUT'));
+
+        $tmp = "$E{$self->INPUT}";
+        $template = $self->make_template($tmp);
+        $self->INPUT($template->fill_in(HASH => $data));
     }
 
     ##Get the output template
@@ -1165,6 +1162,9 @@ sub process_template{
     }
     elsif($self->local_attr->exists('OUTPUT')){
         $self->OUTPUT($self->local_attr->get_values('OUTPUT'));
+        $tmp = "$E{$self->OUTPUT}";
+        $template = $self->make_template($tmp);
+        $self->OUTPUT($template->fill_in(HASH => $data));
     }
 
     $template = $self->make_template($self->process);

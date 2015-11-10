@@ -1,7 +1,7 @@
 #
-# Generated at: 2015-11-09T10:25:06
+# Generated at: 2015-11-09T10:50:27
 # This file was generated with the following options
-#	--workflow	config.yml
+#	--workflow	config2.yml
 #	--verbose	
 #
 
@@ -22,6 +22,8 @@
 # Variables 
 # Indir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA
 # Outdir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/copy1
+# Local Variables:
+#	INPUT: {$self->indir}/{$sample}.csv
 #
 
 echo "Working on /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE1/SAMPLE1/SAMPLE1.csv"
