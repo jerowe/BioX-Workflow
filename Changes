@@ -2,6 +2,7 @@ Revision history for BioX-Writer
 
 {{$NEXT}}
     - Missing carp::always
+    - Commited bug fix with camelized rules - rule_R1 was being changed to rule_r1 in file changes
 
 0.04  2015-11-10 10:02:44 GST
     - Missing dep in cpanfile

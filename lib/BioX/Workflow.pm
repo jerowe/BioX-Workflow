@@ -1070,7 +1070,7 @@ sub write_process{
             if($self->by_sample_outdir){
                 my($tt, $key);
                 $tt = $self->outdir;
-                $key = $self->key;
+                $key = decamelize($self->key);
                 $tt =~ s/$key/$sample\/$key/;
                 $self->outdir($tt);
                 $self->make_outdir;
@@ -1078,7 +1078,7 @@ sub write_process{
 
                 if($self->has_pkey){
                     $tt = $self->indir;
-                    $key = $self->pkey;
+                    $key = decamelize($self->pkey);
                     $tt =~ s/$key/$sample\/$key/;
                     $self->indir($tt);
                     $DB::single=2;
