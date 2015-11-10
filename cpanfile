@@ -24,6 +24,7 @@ requires 'Text::Template';
 requires 'Data::Pairs';
 
 requires 'List::Compare';
+requires 'Carp::Always';
 
 # requires 'Some::Module', 'VERSION';
 

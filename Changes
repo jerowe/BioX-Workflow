@@ -1,6 +1,7 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+    - Missing carp::always
 
 0.04  2015-11-10 10:02:44 GST
     - Missing dep in cpanfile
