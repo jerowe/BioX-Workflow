@@ -934,7 +934,8 @@ sub dothings {
 
     $key = $keys[0];
     $self->key($key);
-    $camel_key = decamelize($key);
+    #$camel_key = decamelize($key);
+    $camel_key= $key;
 
     if($self->auto_name){
         $self->outdir($self->outdir."/$camel_key");
@@ -1070,7 +1071,8 @@ sub write_process{
             if($self->by_sample_outdir){
                 my($tt, $key);
                 $tt = $self->outdir;
-                $key = decamelize($self->key);
+                #$key = decamelize($self->key);
+                $key = $self->key;
                 $tt =~ s/$key/$sample\/$key/;
                 $self->outdir($tt);
                 $self->make_outdir;
@@ -1078,7 +1080,8 @@ sub write_process{
 
                 if($self->has_pkey){
                     $tt = $self->indir;
-                    $key = decamelize($self->pkey);
+                    #$key = decamelize($self->pkey);
+                    $key = $self->key;
                     $tt =~ s/$key/$sample\/$key/;
                     $self->indir($tt);
                     $DB::single=2;
