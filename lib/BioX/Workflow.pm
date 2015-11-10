@@ -708,10 +708,7 @@ Starting point.
 sub run {
     my($self) = shift;
 
-    #print "#!/bin/bash\n\n";
-    #if($self->by_sample_outdir){
-        #$self->auto_name(0);
-    #}
+    print "#!/bin/bash\n\n";
 
     $self->print_opts;
 
