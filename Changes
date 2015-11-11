@@ -1,6 +1,8 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+
+0.08  2015-11-11 11:22:42 GST
     - Added in a BUG fix for indir/outdir not having a clearer method
     - WHY DONT I JUST USE LAZY_BUILD
 

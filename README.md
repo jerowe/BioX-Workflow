@@ -227,7 +227,7 @@ code.
     rules:
         - backup:
             local:
-                - OUTPUT: {$self->indir}/{$sample}.in
+                - INPUT: {$self->indir}/{$sample}.in
                 - OUTPUT: {$self->outdir}/{$sample}.out
 
 Your variables must be defined in an appropriate order.
