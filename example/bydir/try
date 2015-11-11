@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Generated at: 2015-11-11T06:26:04
+# Generated at: 2015-11-11T07:21:41
 # This file was generated with the following options
 #	--workflow	config2.yml
 #
@@ -54,10 +54,11 @@ wait
 
 #
 # Variables 
-# Indir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/copy1
+# Indir: {$self->ROOT}
 # Outdir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/copy2
 # Local Variables:
 #	INPUT: {$self->indir}/{$sample}.csv
+#	indir: {$self->ROOT}
 #	before_meta: HPC THINGS
 
 #
@@ -67,14 +68,14 @@ wait
 #	OUTPUT: 
 #
 
-echo "Working on /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/copy1/SAMPLE1.csv"
+echo "Working on /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE1.csv"
 echo "This should be UNDEF "
-cp "/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/copy1/SAMPLE1.csv" "/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/SAMPLE1/copy2/SAMPLE1.csv"
+cp "/home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE1.csv" "/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/SAMPLE1/copy2/SAMPLE1.csv"
 
 
-echo "Working on /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/copy1/SAMPLE2.csv"
+echo "Working on /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE2.csv"
 echo "This should be UNDEF "
-cp "/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/copy1/SAMPLE2.csv" "/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/SAMPLE2/copy2/SAMPLE2.csv"
+cp "/home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE2.csv" "/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/SAMPLE2/copy2/SAMPLE2.csv"
 
 
 

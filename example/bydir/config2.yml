@@ -18,6 +18,7 @@ rules:
     - copy2:
         local:
             - INPUT: "{$self->indir}/{$sample}.csv"
+            - indir: "{$self->ROOT}"
             - before_meta: |
                 HPC THINGS
 

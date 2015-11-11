@@ -1,6 +1,8 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+    - Added in a BUG fix for indir/outdir not having a clearer method
+    - WHY DONT I JUST USE LAZY_BUILD
 
 0.07  2015-11-11 10:39:37 GST
     - Added in a feature for all local variables to evaluated in process template, not just INPUT/OUTPUT

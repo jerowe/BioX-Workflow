@@ -261,7 +261,7 @@ code.
     rules:
         - backup:
             local:
-                - OUTPUT: {$self->indir}/{$sample}.in
+                - INPUT: {$self->indir}/{$sample}.in
                 - OUTPUT: {$self->outdir}/{$sample}.out
 
 Your variables must be defined in an appropriate order.
@@ -533,10 +533,20 @@ has 'override_process' => (
 
 =cut
 
-has ['indir', 'outdir']  => (
-     is => 'rw',
-     isa => 'Str',
-     default => sub {getcwd();},
+has 'indir'  => (
+    is => 'rw',
+    isa => 'Str',
+    default => sub {getcwd();},
+    predicate => 'has_indir',
+    clearer => 'clear_indir',
+);
+
+has 'outdir'  => (
+    is => 'rw',
+    isa => 'Str',
+    default => sub {getcwd();},
+    predicate => 'has_outdir',
+    clearer => 'clear_outdir',
 );
 
 =head3 Input Output
