@@ -1,6 +1,11 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+    - Added in a feature for all local variables to evaluated in process template, not just INPUT/OUTPUT
+    - INPUT/OUTPUT, indir/outdir are still special variables
+    - Can now do things like
+    - local:
+        - MYLOCALTHING: "{$self->indir}/{$sample}_MYLOCALTHING.txt"
 
 0.05  2015-11-10 11:53:21 GST
     - Missing carp::always

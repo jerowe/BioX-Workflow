@@ -18,8 +18,8 @@ use IO::File;
 use Interpolation E => 'eval';
 use Text::Template qw(fill_in_file fill_in_string);
 use Data::Pairs;
-use Carp::Always;
 
+use Carp::Always;
 
 extends 'BioX::Wrapper';
 with 'MooseX::Getopt::Usage';
@@ -250,7 +250,7 @@ Instead of $self->outdir, it should be {$self->outdir}. It is also possible to
 define variables with other variables in this way. Everything is referenced
 with $self in order to dynamically pass variables to Text::Template. The sample
 variable, $sample, is the exception because it is defined in the loop. In
-addition you can create an INPUT/OUTPUT variables to clean up your process
+addition you can create an OUTPUT/OUTPUT variables to clean up your process
 code.
 
     ---
@@ -261,7 +261,7 @@ code.
     rules:
         - backup:
             local:
-                - INPUT: {$self->indir}/{$sample}.in
+                - OUTPUT: {$self->indir}/{$sample}.in
                 - OUTPUT: {$self->outdir}/{$sample}.out
 
 Your variables must be defined in an appropriate order.
@@ -388,9 +388,11 @@ then resampling based on the .vcf.gz extension.
 =cut
 
 has 'resample' => (
-     is => 'rw',
-     isa => 'Bool',
-     default => 0,
+    is => 'rw',
+    isa => 'Bool',
+    default => 0,
+    predicate => 'has_resample',
+    clearer => 'clear_resample',
 );
 
 =head2 find_by_dir
@@ -543,16 +545,18 @@ Special variables that can have input/output
 
 =cut
 
-has 'INPUT' =>(
+has 'OUTPUT' =>(
     is => 'rw',
     isa => 'Str|Undef',
-    predicate => 'has_INPUT',
+    predicate => 'has_OUTPUT',
+    clearer => 'clear_OUTPUT',
 );
 
 has 'OUTPUT' =>(
     is => 'rw',
     isa => 'Str|Undef',
     predicate => 'has_OUTPUT',
+    clearer => 'clear_OUTPUT',
 );
 
 =head3 file_rule
@@ -722,7 +726,8 @@ sub run {
 
     $self->attr($self->global_attr);
 
-    $self->make_meta;
+    $self->create_attr;
+    $self->eval_attr;
 
     $self->make_outdir;
 
@@ -784,7 +789,6 @@ sub get_samples{
     $text = $self->file_rule;
 
     if($self->find_by_dir){
-        #$DB::single=2;
         @whole = find(directory => name => qr/$text/, maxdepth => 1, in => $self->indir);
         @basename = map {  basename($_) }  @whole ;
     }
@@ -837,13 +841,13 @@ sub make_template{
     return $template;
 }
 
-=head3 make_meta
+=head3 create_attr
 
 make attributes
 
 =cut
 
-sub make_meta{
+sub create_attr{
     my($self) = shift;
 
     my $meta = __PACKAGE__->meta;
@@ -862,23 +866,54 @@ sub make_meta{
     foreach my $k (@keys){
         my($v) = $self->attr->get_values($k);
 
-        next if $k eq "INPUT";
-        next if $k eq "OUTPUT";
-
         if(! exists $seen{$k}){
-            $meta->add_attribute($k => (is => 'rw'));
+            $meta->add_attribute($k => (is => 'rw', predicate => "has_$k", clearer => "clear_$k"));
         }
+        $self->$k($v) if $v;
+    }
+
+    $meta->make_immutable;
+}
+
+sub eval_attr {
+    my $self = shift;
+    my $sample = shift;
+
+    $DB::single=2;
+    my @keys = $self->attr->get_keys();
+
+    foreach my $k (@keys){
+        my($v) = $self->attr->get_values($k);
 
         next unless $v;
 
         my $template = $self->make_template($v);
+        my $text;
+        if($sample){
+            $text = $template->fill_in(HASH => {self => \$self, sample => $sample});
+        }
+        else{
+            $text = $template->fill_in(HASH => {self => \$self});
+        }
 
-        my $text = $template->fill_in(HASH => {self => \$self});
         $self->$k($text);
     }
 
-    $self->make_outdir if exists $seen{outdir};
-    $meta->make_immutable;
+    $self->make_outdir if $self->attr->exists('OUTPUT')
+}
+
+sub clear_attr {
+    my $self = shift;
+
+    my @keys = $self->attr->get_keys();
+
+    foreach my $k (@keys){
+        my($v) = $self->attr->get_values($k);
+        next unless $v;
+
+        my $clear = "clear_$k";
+        $self->$clear;
+    }
 }
 
 sub write_pipeline{
@@ -948,10 +983,9 @@ sub dothings {
     }
 
     if(exists $self->local_rule->{$key}->{local}){
-        $DB::single=2;
         $self->local_attr(Data::Pairs->new($self->local_rule->{$key}->{local}));
         $self->attr($self->local_attr);
-        $self->make_meta;
+        $self->create_attr;
     }
 
     if(! exists $self->local_rule->{$key}->{process}){
@@ -976,23 +1010,15 @@ sub dothings {
 
             print "$self->{comment_char} Local Variables:\n";
 
-            $DB::single=2;
-            if($self->auto_input && $self->INPUT){
-                #print "$self->{comment_char}\tINPUT: ".$self->INPUT."\n";
-                $self->local_attr->set('INPUT' => $self->INPUT);
+            if($self->auto_input && $self->has_OUTPUT){
+                $self->local_attr->set('OUTPUT' => $self->OUTPUT);
             }
 
             my @keys = $self->local_attr->get_keys();
 
             foreach my $k (@keys){
                 my($v) = $self->local_attr->get_values($k);
-
-                if($k eq "OUTPUT" || $k eq "INPUT"){
-                    print "$self->{comment_char}\t$k: ".$v."\n";
-                }
-                else{
-                    print "$self->{comment_char}\t$k: ".$self->$k."\n";
-                }
+                print "$self->{comment_char}\t$k: ".$v."\n";
             }
         }
 
@@ -1009,8 +1035,9 @@ sub dothings {
 
     #Set bools back to false and reinitialize global vars
     $self->resample(0);
+    $self->clear_attr;
     $self->attr($self->global_attr);
-    $self->make_meta;
+    $self->eval_attr;
     $self->local_attr(Data::Pairs->new([]));
 
     if($self->enforce_struct){
@@ -1026,6 +1053,7 @@ sub write_rule_meta{
     my($self, $meta) = @_;
 
     if(exists $self->local_rule->{$self->{key}}->{$meta}){
+        $DB::single=2;
         print "\n$self->{comment_char}\n";
         print "$self->{comment_char} ".$self->local_rule->{$self->key}->{after_meta}."\n";
         print "$self->{comment_char}\n\n";
@@ -1071,7 +1099,6 @@ sub write_process{
             if($self->by_sample_outdir){
                 my($tt, $key);
                 $tt = $self->outdir;
-                #$key = decamelize($self->key);
                 $key = $self->key;
                 $tt =~ s/$key/$sample\/$key/;
                 $self->outdir($tt);
@@ -1080,27 +1107,26 @@ sub write_process{
 
                 if($self->has_pkey){
                     $tt = $self->indir;
-                    #$key = decamelize($self->pkey);
                     $key = $self->key;
                     $tt =~ s/$key/$sample\/$key/;
                     $self->indir($tt);
-                    $DB::single=2;
                 }
                 else{
                     $tt = $self->indir;
                     $tt = "$tt/$sample";
                     $self->indir($tt);
-                    $DB::single=2;
                 }
             }
-            $DB::single=2;
+            $self->eval_attr($sample);
             my $data = {self => \$self, sample => $sample};
+            $DB::single=2;
             $self->process_template($data);
             $self->outdir($origout);
             $self->indir($origin);
         }
     }
     else{
+        $self->eval_attr;
         my $data = {self => \$self};
         $self->process_template($data);
     }
@@ -1111,19 +1137,15 @@ sub write_process{
 
 
     $DB::single=2;
-    my $outdir = $self->outdir;
-    my $indir = $self->indir;
     if($self->auto_input && $self->local_attr->exists('OUTPUT')){
         $DB::single=2;
-        my($tmp) = $self->local_attr->get_values('OUTPUT');
-        #$tmp =~ s/{\$self->outdir}|{\$self->{outdir}}/{\$self->indir}/;
-        #$tmp =~ s/{\$self->outdir}|{\$self->{outdir}}/{\$self->indir}/;
+        my($tmp, $indir, $outdir) = ($self->local_attr->get_values('OUTPUT'), $self->indir, $self->outdir);
         $tmp =~ s/$outdir/$indir/;
-        $self->INPUT($tmp);
+        $self->OUTPUT($tmp);
         $DB::single=2;
     }
     else{
-        $self->INPUT('');
+        $self->OUTPUT('');
     }
     $self->OUTPUT('');
 
@@ -1135,43 +1157,12 @@ sub process_template{
 
     my($tmp, $template);
 
-    $DB::single=2;
-    #$self->INPUT($self->local_attr->get_values('INPUT')) unless $self->INPUT;
-    #$self->OUTPUT($self->local_attr->get_values('OUTPUT'));
-
-    #Get the INPUT template
-    if($self->has_INPUT){
-        $tmp = "$E{$self->INPUT}";
-        $template = $self->make_template($tmp);
-        $self->INPUT($template->fill_in(HASH => $data));
-    }
-    elsif($self->local_attr->exists('INPUT')){
-        $DB::single=2;
-        $self->INPUT($self->local_attr->get_values('INPUT'));
-
-        $tmp = "$E{$self->INPUT}";
-        $template = $self->make_template($tmp);
-        $self->INPUT($template->fill_in(HASH => $data));
-    }
-
-    ##Get the output template
-    if($self->has_OUTPUT){
-        $tmp = "$E{$self->OUTPUT}";
-        $template = $self->make_template($tmp);
-        $self->OUTPUT($template->fill_in(HASH => $data));
-    }
-    elsif($self->local_attr->exists('OUTPUT')){
-        $self->OUTPUT($self->local_attr->get_values('OUTPUT'));
-        $tmp = "$E{$self->OUTPUT}";
-        $template = $self->make_template($tmp);
-        $self->OUTPUT($template->fill_in(HASH => $data));
-    }
-
     $template = $self->make_template($self->process);
+    $DB::single=2;
     $template->fill_in(HASH => $data, OUTPUT => \*STDOUT);
 
-    $self->INPUT($self->local_attr->get_values('INPUT'));
-    $self->OUTPUT($self->local_attr->get_values('OUTPUT'));
+    #$self->OUTPUT($self->local_attr->get_values('OUTPUT')) if $self->local_attr->exists('OUTPUT');
+    #$self->OUTPUT($self->local_attr->get_values('OUTPUT')) if $self->local_attr->exists('OUTPUT');
 
     print "\n\n";
 }

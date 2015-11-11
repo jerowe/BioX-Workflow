@@ -1,5 +1,6 @@
 ---
 global:
+    - ROOT: /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA
     - indir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA
     - outdir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT
     - file_rule: (SAMPLE.*)$
@@ -9,12 +10,23 @@ rules:
     - copy1:
         local:
             - INPUT: "{$self->indir}/{$sample}.csv"
-        process: |
-            echo "Working on {$self->{indir}}/{$sample}/{$sample}.csv"
-            cp "{$self->INPUT}" "{$self->{outdir}}/{$sample}.csv"
-    - copy2:
+            - TRIMMOMATIC: "{$self->ROOT}/{$sample}_TRIMMOMATIC_THING.gz"
+            - before_meta: "\n#HPC mem=24GB"
         process: |
             echo "Working on {$self->{indir}}/{$sample}.csv"
+            cp "{$self->INPUT}" "{$self->{outdir}}/{$sample}.csv"
+    - copy2:
+        local:
+            - INPUT: "{$self->indir}/{$sample}.csv"
+            - before_meta: |
+                HPC THINGS
+
+                #
+                #HPC mem=24GB
+                #
+        process: |
+            echo "Working on {$self->{indir}}/{$sample}.csv"
+            echo "This should be UNDEF {$self->TRIMMOMATIC}"
             cp "{$self->{indir}}/{$sample}.csv" "{$self->{outdir}}/{$sample}.csv"
 
 
