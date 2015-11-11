@@ -216,7 +216,7 @@ Instead of $self->outdir, it should be {$self->outdir}. It is also possible to
 define variables with other variables in this way. Everything is referenced
 with $self in order to dynamically pass variables to Text::Template. The sample
 variable, $sample, is the exception because it is defined in the loop. In
-addition you can create an INPUT/OUTPUT variables to clean up your process
+addition you can create an OUTPUT/OUTPUT variables to clean up your process
 code.
 
     ---
@@ -227,7 +227,7 @@ code.
     rules:
         - backup:
             local:
-                - INPUT: {$self->indir}/{$sample}.in
+                - OUTPUT: {$self->indir}/{$sample}.in
                 - OUTPUT: {$self->outdir}/{$sample}.out
 
 Your variables must be defined in an appropriate order.
@@ -508,7 +508,7 @@ Load classes defined in yaml with Class::Load
 
 Make the template for interpolating strings
 
-### make\_meta
+### create\_attr
 
 make attributes
 
