@@ -1,7 +1,9 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
-- Bug fix for by_sample_dir and evaling indirs/outdirs with Text::Template
+
+0.09  2015-11-15 12:52:24 GST
+    - Bug fix for by_sample_dir and evaling indirs/outdirs with Text::Template
 
 0.08  2015-11-11 11:22:42 GST
     - Added in a BUG fix for indir/outdir not having a clearer method
