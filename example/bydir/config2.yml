@@ -17,8 +17,8 @@ rules:
             cp "{$self->INPUT}" "{$self->{outdir}}/{$sample}.csv"
     - copy2:
         local:
-            - INPUT: "{$self->indir}/{$sample}.csv"
             - indir: "{$self->ROOT}"
+            - INPUT: "{$self->indir}/{$sample}.csv"
             - before_meta: |
                 HPC THINGS
 

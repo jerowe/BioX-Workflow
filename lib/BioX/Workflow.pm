@@ -803,6 +803,7 @@ sub get_samples{
         @basename = map {  basename($_) }  @whole ;
     }
     else{
+                $DB::single=2;
         @whole = find(file => name => qr/$text/, maxdepth => 1, in => $self->indir);
         @basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
     }
@@ -906,6 +907,7 @@ sub eval_attr {
             $text = $template->fill_in(HASH => {self => \$self});
         }
 
+        $DB::single=2;
         $self->$k($text);
     }
 
@@ -1115,16 +1117,25 @@ sub write_process{
                 $self->make_outdir;
                 $DB::single=2;
 
-                if($self->has_pkey){
-                    $tt = $self->indir;
-                    $key = $self->key;
+                $tt = $self->indir;
+                if($tt =~ m/\{\$self/){
+                    $DB::single=2;
+                    $tt = "$tt/{\$sample}";
+                    $self->indir($tt);
+                    $self->attr->set('indir' => $self->indir) if $self->attr->exists('indir');
+                }
+                elsif($self->has_pkey){
+                    $DB::single=2;
+                    $key = $self->pkey;
                     $tt =~ s/$key/$sample\/$key/;
                     $self->indir($tt);
+                    $self->attr->set('indir' => $self->indir) if $self->attr->exists('indir');
                 }
                 else{
-                    $tt = $self->indir;
+                    $DB::single=2;
                     $tt = "$tt/$sample";
                     $self->indir($tt);
+                    $self->attr->set('indir' => $self->indir) if $self->attr->exists('indir');
                 }
             }
             $self->eval_attr($sample);
