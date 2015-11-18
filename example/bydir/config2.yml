@@ -26,8 +26,8 @@ rules:
                 #HPC mem=24GB
                 #
         process: |
-            echo "Working on {$self->{indir}}/{$sample}.csv"
-            echo "This should be UNDEF {$self->TRIMMOMATIC}"
-            cp "{$self->{indir}}/{$sample}.csv" "{$self->{outdir}}/{$sample}.csv"
+            echo "Working on {$self->{indir}}/{$sample}.csv" && \
+                echo "This should be UNDEF {$self->TRIMMOMATIC}" && \
+                cp "{$self->{indir}}/{$sample}.csv" "{$self->{outdir}}/{$sample}.csv"
 
 

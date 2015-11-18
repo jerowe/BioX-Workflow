@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Generated at: 2015-11-15T08:21:57
+# Generated at: 2015-11-15T10:08:46
 # This file was generated with the following options
 #	--workflow	config2.yml
 #
@@ -34,8 +34,6 @@ echo "Working on /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SA
 cp "/home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE1/SAMPLE1.csv" "/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/SAMPLE1/copy1/SAMPLE1.csv"
 
 
-copy1echo "Working on {$self->{indir}}/{$sample}.csv"
-cp "{$self->INPUT}" "{$self->{outdir}}/{$sample}.csv"
 echo "Working on /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE2/SAMPLE2.csv"
 cp "/home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE2/SAMPLE2.csv" "/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/SAMPLE2/copy1/SAMPLE2.csv"
 
@@ -59,8 +57,8 @@ wait
 # Indir: {$self->ROOT}
 # Outdir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/copy2
 # Local Variables:
-#	INPUT: {$self->indir}/{$sample}.csv
 #	indir: {$self->ROOT}
+#	INPUT: {$self->indir}/{$sample}.csv
 #	before_meta: HPC THINGS
 
 #
@@ -70,4 +68,23 @@ wait
 #	OUTPUT: 
 #
 
-/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/SAMPLE1/copy2
+echo "Working on /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE1/SAMPLE1.csv" && \
+    echo "This should be UNDEF " && \
+    cp "/home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE1/SAMPLE1.csv" "/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/SAMPLE1/copy2/SAMPLE1.csv"
+
+
+echo "Working on /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE2/SAMPLE2.csv" && \
+    echo "This should be UNDEF " && \
+    cp "/home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE2/SAMPLE2.csv" "/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/SAMPLE2/copy2/SAMPLE2.csv"
+
+
+
+wait
+
+#
+# Ending copy2
+#
+
+#
+# Ending Workflow
+#

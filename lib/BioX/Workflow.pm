@@ -26,6 +26,9 @@ with 'MooseX::Getopt::Usage';
 with 'MooseX::Getopt::Usage::Role::Man';
 with 'MooseX::SimpleConfig';
 
+with 'MooseX::Object::Pluggable';
+
+
 # For pretty man pages!
 $ENV{TERM}='xterm-256color';
 
@@ -58,12 +61,12 @@ BioX::Workflow assumes your have a set of inputs, known as samples,
 and these inputs will carry on through your pipeline. There are some exceptions
 to this, which we will explore with the resample option.
 
-It also makes several assumtions about your output structure. It assumes you
+It also makes several assumptions about your output structure. It assumes you
 have each of your processes/rules outputting to a distinct directory.
 
 These directories will be created and automatically named based on your process
 name. You can disable this and make your own out directories by either
-specifiying auto_name: 1 in your global, in any of the local rules to disable
+specifiying auto_name: 0 in your global, in any of the local rules to disable
 it for that rule, or by specifying an outdirectory.
 
 =head1 A Simple Example
@@ -234,6 +237,29 @@ So on and so forth.
     # Workflow Finished
     #
 
+=head2 Finding your Samples
+
+Finding samples is the most crucial step of the workflow. If no samples are found, nothing is done.
+
+Normally, samples are files.
+
+    /path/to/indir
+        sample1.vcf
+        sample2.vcf
+        sample3.vcf
+
+But sometimes samples are directories.
+
+    /path/to/indir
+        /sample1
+            billions_of_small_files
+            from_the_Sequencer
+        /sample2
+            billions_of_small_files
+            from_the_Sequencer
+
+If this is the case with your workflow, please specify find_by_dir=>1.
+
 =head1 Customizing your output and special variables
 
 BioX::Workflow uses a few conventions and special variables. As you
@@ -251,7 +277,8 @@ define variables with other variables in this way. Everything is referenced
 with $self in order to dynamically pass variables to Text::Template. The sample
 variable, $sample, is the exception because it is defined in the loop. In
 addition you can create an OUTPUT/OUTPUT variables to clean up your process
-code.
+code. These are special variables that are also used in Drake. Please see L<BioX::Workflow::Drake>
+for more details.
 
     ---
     global:
@@ -317,7 +344,9 @@ template. Make sure to use the previously defined $OUT. For more information see
 
 =head2 Directory Structure
 
-BioX::Workflow will create a directory structure based on your rule name, decamelized, and your globally defined outdir.
+BioX::Workflow will create a directory structure based on your rule name, and your globally defined outdir.
+
+=head3 Default Structure
 
 /path/to/outdir
     /rule1
@@ -326,6 +355,20 @@ BioX::Workflow will create a directory structure based on your rule name, decame
 
 If you don't like this you can globally disable auto_name (auto_name: 0), or simply defined indir or outdir within your global variables. If using the
 second method it is probably a good idea to also defined a ROOT_DIR in your global variables.
+
+=head3 By Sample Directory Structure
+
+Alternately you can create a directory structure that separates your rules into sample directories with by_sample_outdir=1
+
+/path/to/outdir
+    SAMPLE1/
+        /rule1
+        /rule2
+        /rule3
+    SAMPLE2/
+        /rule1
+        /rule2
+        /rule3
 
 =head2 Other variables
 
@@ -388,6 +431,7 @@ then resampling based on the .vcf.gz extension.
 =cut
 
 has 'resample' => (
+    traits  => [ 'NoGetopt'  ],
     is => 'rw',
     isa => 'Bool',
     default => 0,
@@ -513,6 +557,7 @@ has 'wait' => (
      is => 'rw',
      isa => 'Bool',
      default => 1,
+     documentation => q(Print 'wait' at the end of each rule. If you are running as a plain bash script you probably don't need this.)
 );
 
 
@@ -527,6 +572,9 @@ has 'override_process' => (
      is => 'rw',
      isa => 'Bool',
      default => 0,
+     predicate => 'has_override_proccess',
+     clearer => 'clear_override_proccess',
+     documentation => q(Instead of for my $sample (@sample){ DO STUFF } just DOSTUFF),
 );
 
 =head3 indir outdir
@@ -539,6 +587,7 @@ has 'indir'  => (
     default => sub {getcwd();},
     predicate => 'has_indir',
     clearer => 'clear_indir',
+    documentation => q(Directory to look for samples),
 );
 
 has 'outdir'  => (
@@ -547,11 +596,27 @@ has 'outdir'  => (
     default => sub {getcwd();},
     predicate => 'has_outdir',
     clearer => 'clear_outdir',
+    documentation => q(Output directories for rules and processes),
 );
 
-=head3 Input Output
+=head3 create_outdir
+
+=cut
+
+has 'create_outdir' => (
+    is => 'rw',
+    isa => 'Bool',
+    predicate => 'has_create_outdir',
+    clearer => 'clear_create_outdir',
+    documentation => q(Create the outdir. You may want to turn this off if doing a rule that doesn't write anything, such as checking if files exist),
+    default => 1,
+);
+
+=head3 INPUT OUTPUT
 
 Special variables that can have input/output
+
+These variables are also used in L<BioX::Workflow::Drake>
 
 =cut
 
@@ -560,13 +625,16 @@ has 'OUTPUT' =>(
     isa => 'Str|Undef',
     predicate => 'has_OUTPUT',
     clearer => 'clear_OUTPUT',
+    documentation => q(Maybe clean up your code some. At the end of each process the OUTPUT becomes
+    the INPUT. Best when putting a single file through a stream of processes.)
 );
 
-has 'OUTPUT' =>(
+has 'INPUT' =>(
     is => 'rw',
     isa => 'Str|Undef',
-    predicate => 'has_OUTPUT',
-    clearer => 'clear_OUTPUT',
+    predicate => 'has_INPUT',
+    clearer => 'clear_INPUT',
+    documentation => q(See $OUTPUT)
 );
 
 =head3 file_rule
@@ -581,8 +649,12 @@ has 'file_rule' =>(
      default => sub { return "\\.[^.]*"; }
 );
 
+=head3 No GetOpt Here
+
+=cut
 
 has 'yaml' => (
+    traits  => [ 'NoGetopt'  ],
     is => 'rw',
 );
 
@@ -593,6 +665,7 @@ attributes read in from runtime
 =cut
 
 has 'attr' => (
+    traits  => [ 'NoGetopt'  ],
     is => 'rw',
     isa => 'Data::Pairs',
 );
@@ -604,6 +677,7 @@ Attributes defined in the global section of the yaml file
 =cut
 
 has 'global_attr' => (
+    traits  => [ 'NoGetopt'  ],
     is => 'rw',
     isa => 'Data::Pairs',
 );
@@ -615,6 +689,7 @@ Attributes defined in the rules->rulename->local section of the yaml file
 =cut
 
 has 'local_attr' => (
+    traits  => [ 'NoGetopt'  ],
     is => 'rw',
     isa => 'Data::Pairs',
 );
@@ -624,6 +699,7 @@ has 'local_attr' => (
 =cut
 
 has 'local_rule' => (
+    traits  => [ 'NoGetopt'  ],
     is => 'rw',
     isa => 'HashRef'
 );
@@ -635,6 +711,7 @@ Infiles to be processed
 =cut
 
 has 'infiles' => (
+    traits  => [ 'NoGetopt'  ],
      is => 'rw',
      isa => 'ArrayRef',
 );
@@ -655,6 +732,7 @@ Do stuff
 =cut
 
 has 'process' => (
+    traits  => [ 'NoGetopt'  ],
     is => 'rw',
     isa => 'Str',
 );
@@ -666,6 +744,7 @@ Do stuff
 =cut
 
 has 'key' => (
+    traits  => [ 'NoGetopt'  ],
     is => 'rw',
     isa => 'Str',
 );
@@ -767,6 +846,8 @@ Set initial indir and outdir
 sub make_outdir {
     my($self) = @_;
 
+    return unless $self->create_outdir;
+
     make_path($self->outdir) if ! -d $self->outdir;
 }
 
@@ -796,6 +877,8 @@ sub get_samples{
     my($self) = shift;
     my(@whole, @basename, $text);
 
+    return if $self->attr->exists('samples');
+
     $text = $self->file_rule;
 
     if($self->find_by_dir){
@@ -818,7 +901,26 @@ sub get_samples{
     }
 }
 
-=head3 load
+
+=head3 plugin_load
+
+Load plugins defined in yaml with MooseX::Object::Pluggable
+
+=cut
+
+sub plugin_load {
+    my($self) = shift;
+
+    return unless $self->yaml->{plugins};
+
+    my $modules = $self->yaml->{plugins};
+
+    foreach my $m (@$modules){
+        load_plugin($m);
+    }
+}
+
+=head3 class_load
 
 Load classes defined in yaml with Class::Load
 
@@ -911,7 +1013,7 @@ sub eval_attr {
         $self->$k($text);
     }
 
-    $self->make_outdir if $self->attr->exists('OUTPUT')
+    $self->make_outdir if $self->attr->exists('OUTPUT');
 }
 
 sub clear_attr {
@@ -1166,9 +1268,9 @@ sub write_process{
         $DB::single=2;
     }
     else{
-        $self->OUTPUT('');
+        #$self->OUTPUT('');
+        $self->clear_OUTPUT();
     }
-    $self->OUTPUT('');
 
     $self->pkey($self->key);
 }

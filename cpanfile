@@ -26,6 +26,8 @@ requires 'Data::Pairs';
 requires 'List::Compare';
 requires 'Carp::Always';
 
+requires "MooseX::Object::Pluggable";
+
 # requires 'Some::Module', 'VERSION';
 
 on test => sub {
