@@ -25,12 +25,12 @@ BioX::Workflow assumes your have a set of inputs, known as samples,
 and these inputs will carry on through your pipeline. There are some exceptions
 to this, which we will explore with the resample option.
 
-It also makes several assumtions about your output structure. It assumes you
+It also makes several assumptions about your output structure. It assumes you
 have each of your processes/rules outputting to a distinct directory.
 
 These directories will be created and automatically named based on your process
 name. You can disable this and make your own out directories by either
-specifiying auto\_name: 1 in your global, in any of the local rules to disable
+specifiying auto\_name: 0 in your global, in any of the local rules to disable
 it for that rule, or by specifying an outdirectory.
 
 # A Simple Example
@@ -200,6 +200,29 @@ So on and so forth.
     # Workflow Finished
     #
 
+## Finding your Samples
+
+Finding samples is the most crucial step of the workflow. If no samples are found, nothing is done.
+
+Normally, samples are files.
+
+    /path/to/indir
+        sample1.vcf
+        sample2.vcf
+        sample3.vcf
+
+But sometimes samples are directories.
+
+    /path/to/indir
+        /sample1
+            billions_of_small_files
+            from_the_Sequencer
+        /sample2
+            billions_of_small_files
+            from_the_Sequencer
+
+If this is the case with your workflow, please specify find\_by\_dir=>1.
+
 # Customizing your output and special variables
 
 BioX::Workflow uses a few conventions and special variables. As you
@@ -217,7 +240,8 @@ define variables with other variables in this way. Everything is referenced
 with $self in order to dynamically pass variables to Text::Template. The sample
 variable, $sample, is the exception because it is defined in the loop. In
 addition you can create an OUTPUT/OUTPUT variables to clean up your process
-code.
+code. These are special variables that are also used in Drake. Please see [BioX::Workflow::Plugin::Drake](https://metacpan.org/pod/BioX::Workflow::Plugin::Drake)
+for more details.
 
     ---
     global:
@@ -281,7 +305,9 @@ template. Make sure to use the previously defined $OUT. For more information see
 
 ## Directory Structure
 
-BioX::Workflow will create a directory structure based on your rule name, decamelized, and your globally defined outdir.
+BioX::Workflow will create a directory structure based on your rule name, and your globally defined outdir.
+
+### Default Structure
 
 /path/to/outdir
     /rule1
@@ -290,6 +316,20 @@ BioX::Workflow will create a directory structure based on your rule name, decame
 
 If you don't like this you can globally disable auto\_name (auto\_name: 0), or simply defined indir or outdir within your global variables. If using the
 second method it is probably a good idea to also defined a ROOT\_DIR in your global variables.
+
+### By Sample Directory Structure
+
+Alternately you can create a directory structure that separates your rules into sample directories with by\_sample\_outdir=1
+
+/path/to/outdir
+    SAMPLE1/
+        /rule1
+        /rule2
+        /rule3
+    SAMPLE2/
+        /rule1
+        /rule2
+        /rule3
 
 ## Other variables
 
@@ -329,6 +369,40 @@ check for uncompressed files, compress them, and then carry on with your life.
 
 The bgzip rule would first run a resample looking for only files ending in .vcf, and compress them. The following rule, normalize\_snpeff, looks again
 in the indir (which we set here otherwise it would have been the previous rules outdir), and resamples based on the .vcf.gz extension.
+
+## Plugins
+
+As of 0.10 there is a plugin system using [MooseX::Object::Pluggable](https://metacpan.org/pod/MooseX::Object::Pluggable)
+
+    ---
+    plugins:
+        - FileDetails
+    global:
+        - indir: /home/user/gemini
+        - outdir: /home/user/gemini/gemini-wrapper
+        - file_rule: (.vcf)$|(.vcf.gz)$
+        - infile:
+    #So On and So Forth
+
+BioX::Workflow::Drake has been moved to BioX::Workflow::Plugin Drake. Instead of using
+
+biox-workflow-drake.pl --THINGS
+
+Instead add 'Drake' to your plugins list in your workflow file.
+
+### Drake Plugin
+
+Drake is a 'make for data.' More information about it can be found here:
+[https://github.com/Factual/drake](https://github.com/Factual/drake) and the module can be found at [BioX::Workflow::Plugin::Drake](https://metacpan.org/pod/BioX::Workflow::Plugin::Drake).
+
+### FileDetails Plugin
+
+BioX::Workflow will optionally put some commands at the end of your workflow to check files for
+metadata: MD5, DateTime created, last accessed, last modified, size, and human readable size.
+
+It creates a structure {$self->outdir}/meta/file.meta. The output structure will probably be changed in the future.
+
+For more information please see [BioX::Workflow::Plugin::FileDetails](https://metacpan.org/pod/BioX::Workflow::Plugin::FileDetails)
 
 # In Code Documenation
 
@@ -418,13 +492,19 @@ local:
 
 ### indir outdir
 
-### Input Output
+### create\_outdir
+
+### INPUT OUTPUT
 
 Special variables that can have input/output
+
+These variables are also used in [BioX::Workflow::Plugin::Drake](https://metacpan.org/pod/BioX::Workflow::Plugin::Drake)
 
 ### file\_rule
 
 Rule to find files
+
+### No GetOpt Here
 
 ### attr
 
@@ -500,7 +580,11 @@ Could have
         dostuff
     }
 
-### load
+### plugin\_load
+
+Load plugins defined in yaml with MooseX::Object::Pluggable
+
+### class\_load
 
 Load classes defined in yaml with Class::Load
 
@@ -517,6 +601,14 @@ make attributes
 ### write\_process
 
 Fill in the template with the process
+
+### process\_by\_sample\_outdir
+
+Make sure indir/outdirs are named appropriated for samples when using by
+
+### OUTPUT\_to\_INPUT
+
+If we are using auto\_input chain INPUT/OUTPUT
 
 # DESCRIPTION
 

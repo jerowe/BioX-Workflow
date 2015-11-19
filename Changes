@@ -1,6 +1,8 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+
+0.10  2015-11-19 12:37:46 GST
     - Lots of code refactoring for new plugin system!
 
 0.09  2015-11-15 12:52:24 GST
