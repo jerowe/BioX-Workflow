@@ -277,7 +277,7 @@ define variables with other variables in this way. Everything is referenced
 with $self in order to dynamically pass variables to Text::Template. The sample
 variable, $sample, is the exception because it is defined in the loop. In
 addition you can create an OUTPUT/OUTPUT variables to clean up your process
-code. These are special variables that are also used in Drake. Please see L<BioX::Workflow::Drake>
+code. These are special variables that are also used in Drake. Please see L<BioX::Workflow::Plugin::Drake>
 for more details.
 
     ---
@@ -408,6 +408,40 @@ check for uncompressed files, compress them, and then carry on with your life.
 
 The bgzip rule would first run a resample looking for only files ending in .vcf, and compress them. The following rule, normalize_snpeff, looks again
 in the indir (which we set here otherwise it would have been the previous rules outdir), and resamples based on the .vcf.gz extension.
+
+=head2 Plugins
+
+As of 0.10 there is a plugin system using L<MooseX::Object::Pluggable>
+
+    ---
+    plugins:
+        - FileDetails
+    global:
+        - indir: /home/user/gemini
+        - outdir: /home/user/gemini/gemini-wrapper
+        - file_rule: (.vcf)$|(.vcf.gz)$
+        - infile:
+    #So On and So Forth
+
+BioX::Workflow::Drake has been moved to BioX::Workflow::Plugin Drake. Instead of using
+
+biox-workflow-drake.pl --THINGS
+
+Instead add 'Drake' to your plugins list in your workflow file.
+
+=head3 Drake Plugin
+
+Drake is a 'make for data.' More information about it can be found here:
+L<https://github.com/Factual/drake> and the module can be found at L<BioX::Workflow::Plugin::Drake>.
+
+=head3 FileDetails Plugin
+
+BioX::Workflow will optionally put some commands at the end of your workflow to check files for
+metadata: MD5, DateTime created, last accessed, last modified, size, and human readable size.
+
+It creates a structure {$self->outdir}/meta/file.meta. The output structure will probably be changed in the future.
+
+For more information please see L<BioX::Workflow::Plugin::FileDetails>
 
 =head1 In Code Documenation
 
@@ -616,7 +650,7 @@ has 'create_outdir' => (
 
 Special variables that can have input/output
 
-These variables are also used in L<BioX::Workflow::Drake>
+These variables are also used in L<BioX::Workflow::Plugin::Drake>
 
 =cut
 
@@ -810,6 +844,7 @@ sub run {
     $self->yaml($array);
 
     $self->class_load;
+    $self->plugin_load;
 
     $self->global_attr(Data::Pairs->new($array->{global}));
 
@@ -916,7 +951,7 @@ sub plugin_load {
     my $modules = $self->yaml->{plugins};
 
     foreach my $m (@$modules){
-        load_plugin($m);
+       $self->load_plugin($m);
     }
 }
 
@@ -992,7 +1027,7 @@ sub eval_attr {
     my $self = shift;
     my $sample = shift;
 
-    $DB::single=2;
+    #$DB::single=2;
     my @keys = $self->attr->get_keys();
 
     foreach my $k (@keys){
@@ -1009,11 +1044,12 @@ sub eval_attr {
             $text = $template->fill_in(HASH => {self => \$self});
         }
 
-        $DB::single=2;
+        #$DB::single=2;
         $self->$k($text);
     }
 
-    $self->make_outdir if $self->attr->exists('OUTPUT');
+    #$self->make_outdir if $self->attr->exists('OUTPUT');
+    $self->make_outdir if $self->create_outdir;
 }
 
 sub clear_attr {
@@ -1083,7 +1119,6 @@ sub dothings {
 
     $key = $keys[0];
     $self->key($key);
-    #$camel_key = decamelize($key);
     $camel_key= $key;
 
     if($self->auto_name){
@@ -1124,8 +1159,9 @@ sub dothings {
 
             print "$self->{comment_char} Local Variables:\n";
 
-            if($self->auto_input && $self->has_OUTPUT){
-                $self->local_attr->set('OUTPUT' => $self->OUTPUT);
+            if($self->auto_input ){
+                $self->local_attr->set('OUTPUT' => $self->OUTPUT) if $self->has_OUTPUT;
+                $self->local_attr->set('INPUT' => $self->global_attr->get_values('INPUT')) if $self->global_attr->exists('INPUT');
             }
 
             my @keys = $self->local_attr->get_keys();
@@ -1210,39 +1246,11 @@ sub write_process{
 
     if(!$self->override_process){
         foreach my $sample (@{$self->samples}){
-            if($self->by_sample_outdir){
-                my($tt, $key);
-                $tt = $self->outdir;
-                $key = $self->key;
-                $tt =~ s/$key/$sample\/$key/;
-                $self->outdir($tt);
-                $self->make_outdir;
-                $DB::single=2;
-
-                $tt = $self->indir;
-                if($tt =~ m/\{\$self/){
-                    $DB::single=2;
-                    $tt = "$tt/{\$sample}";
-                    $self->indir($tt);
-                    $self->attr->set('indir' => $self->indir) if $self->attr->exists('indir');
-                }
-                elsif($self->has_pkey){
-                    $DB::single=2;
-                    $key = $self->pkey;
-                    $tt =~ s/$key/$sample\/$key/;
-                    $self->indir($tt);
-                    $self->attr->set('indir' => $self->indir) if $self->attr->exists('indir');
-                }
-                else{
-                    $DB::single=2;
-                    $tt = "$tt/$sample";
-                    $self->indir($tt);
-                    $self->attr->set('indir' => $self->indir) if $self->attr->exists('indir');
-                }
-            }
+            $self->process_by_sample_outdir($sample) if $self->by_sample_outdir;
+            $DB::single=2;
             $self->eval_attr($sample);
             my $data = {self => \$self, sample => $sample};
-            $DB::single=2;
+            #$DB::single=2;
             $self->process_template($data);
             $self->outdir($origout);
             $self->indir($origin);
@@ -1258,21 +1266,74 @@ sub write_process{
         print "\nwait\n";
     }
 
+    $self->OUTPUT_to_INPUT;
 
+    $self->pkey($self->key);
+}
+
+=head3 process_by_sample_outdir
+
+Make sure indir/outdirs are named appropriated for samples when using by
+
+=cut
+
+sub process_by_sample_outdir {
+    my $self = shift;
+    my $sample = shift;
+
+    my($tt, $key);
+    $tt = $self->outdir;
+    $key = $self->key;
+    $tt =~ s/$key/$sample\/$key/;
+    $self->outdir($tt);
+    $self->make_outdir;
     $DB::single=2;
+
+    $tt = $self->indir;
+    if($tt =~ m/\{\$self/){
+        $DB::single=2;
+        $tt = "$tt/{\$sample}";
+        $self->indir($tt);
+        $self->attr->set('indir' => $self->indir) if $self->attr->exists('indir');
+    }
+    elsif($self->has_pkey){
+        $DB::single=2;
+        $key = $self->pkey;
+        $tt =~ s/$key/$sample\/$key/;
+        $self->indir($tt);
+        $self->attr->set('indir' => $self->indir) if $self->attr->exists('indir');
+    }
+    else{
+        $DB::single=2;
+        $tt = "$tt/$sample";
+        $self->indir($tt);
+        $self->attr->set('indir' => $self->indir) if $self->attr->exists('indir');
+    }
+}
+
+
+=head3 OUTPUT_to_INPUT
+
+If we are using auto_input chain INPUT/OUTPUT
+
+=cut
+
+sub OUTPUT_to_INPUT {
+    my $self = shift;
+    $DB::single=2;
+    #Change the output to input
     if($self->auto_input && $self->local_attr->exists('OUTPUT')){
         $DB::single=2;
         my($tmp, $indir, $outdir) = ($self->local_attr->get_values('OUTPUT'), $self->indir, $self->outdir);
-        $tmp =~ s/$outdir/$indir/;
-        $self->OUTPUT($tmp);
+        $tmp =~ s/{\$self->outdir}/{\$self->indir}/g;
+        $self->INPUT($tmp);
+        #This is not the best way of doing this....
+        $self->global_attr->set(INPUT => $self->INPUT);
         $DB::single=2;
     }
     else{
-        #$self->OUTPUT('');
         $self->clear_OUTPUT();
     }
-
-    $self->pkey($self->key);
 }
 
 sub process_template{
@@ -1284,8 +1345,8 @@ sub process_template{
     $DB::single=2;
     $template->fill_in(HASH => $data, OUTPUT => \*STDOUT);
 
-    #$self->OUTPUT($self->local_attr->get_values('OUTPUT')) if $self->local_attr->exists('OUTPUT');
-    #$self->OUTPUT($self->local_attr->get_values('OUTPUT')) if $self->local_attr->exists('OUTPUT');
+    $self->INPUT($self->local_attr->get_values('INPUT')) if $self->local_attr->exists('INPUT');
+    $self->OUTPUT($self->local_attr->get_values('OUTPUT')) if $self->local_attr->exists('OUTPUT');
 
     print "\n\n";
 }

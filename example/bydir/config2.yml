@@ -1,4 +1,6 @@
 ---
+plugins:
+    - FileDetails
 global:
     - ROOT: /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA
     - indir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA

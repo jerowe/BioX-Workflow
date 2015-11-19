@@ -1,6 +1,7 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+    - Lots of code refactoring for new plugin system!
 
 0.09  2015-11-15 12:52:24 GST
     - Bug fix for by_sample_dir and evaling indirs/outdirs with Text::Template
