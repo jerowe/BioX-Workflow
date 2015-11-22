@@ -294,7 +294,7 @@ template. Make sure to use the previously defined $OUT. For more information see
     rules:
         - backup:
             outdir: {$self->ROOT}/datafiles
-            override: 1
+            override_process: 1
             process: |
                 $OUT .= wget {$self->some_globally_defined_parameter}
                 {
@@ -488,7 +488,7 @@ Print "wait" at the end of each rule
 ### override\_process
 
 local:
-    - override: 1
+    - override\_process: 1
 
 ### indir outdir
 
