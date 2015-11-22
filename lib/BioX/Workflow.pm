@@ -331,7 +331,7 @@ template. Make sure to use the previously defined $OUT. For more information see
     rules:
         - backup:
             outdir: {$self->ROOT}/datafiles
-            override: 1
+            override_process: 1
             process: |
                 $OUT .= wget {$self->some_globally_defined_parameter}
                 {
@@ -598,7 +598,7 @@ has 'wait' => (
 =head3 override_process
 
 local:
-    - override: 1
+    - override_process: 1
 
 =cut
 
@@ -606,8 +606,8 @@ has 'override_process' => (
      is => 'rw',
      isa => 'Bool',
      default => 0,
-     predicate => 'has_override_proccess',
-     clearer => 'clear_override_proccess',
+     predicate => 'has_override_process',
+     clearer => 'clear_override_process',
      documentation => q(Instead of for my $sample (@sample){ DO STUFF } just DOSTUFF),
 );
 
@@ -1127,7 +1127,7 @@ sub dothings {
         $self->make_outdir() unless $self->by_sample_outdir;
     }
 
-    if (exists $self->local_rule->{$key}->{override} && $self->local_rule->{$key}->{override} == 1){
+    if (exists $self->local_rule->{$key}->{override_process} && $self->local_rule->{$key}->{override_process} == 1){
         $self->override_process(1);
     }
 
@@ -1185,6 +1185,7 @@ sub dothings {
 
     #Set bools back to false and reinitialize global vars
     $self->resample(0);
+    $self->override_process(0);
     $self->clear_attr;
     $self->attr($self->global_attr);
     $self->eval_attr;
@@ -1244,7 +1245,7 @@ sub write_process{
 
     $DB::single = 2;
 
-    if(!$self->override_process){
+    if(!$self->has_override_process){
         foreach my $sample (@{$self->samples}){
             $self->process_by_sample_outdir($sample) if $self->by_sample_outdir;
             $DB::single=2;

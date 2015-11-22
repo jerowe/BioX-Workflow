@@ -1,6 +1,7 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+    - Fixed override process
 
 0.10  2015-11-19 12:37:46 GST
     - Lots of code refactoring for new plugin system!
