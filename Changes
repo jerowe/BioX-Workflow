@@ -1,6 +1,7 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+    - Added global attr to eval call
 
 0.11  2015-11-22 13:01:23 GST
     - Fixed override process
