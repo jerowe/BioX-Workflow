@@ -603,12 +603,16 @@ local:
 =cut
 
 has 'override_process' => (
-     is => 'rw',
-     isa => 'Bool',
-     default => 0,
-     predicate => 'has_override_process',
-     clearer => 'clear_override_process',
-     documentation => q(Instead of for my $sample (@sample){ DO STUFF } just DOSTUFF),
+    traits  => ['Bool'],
+    is => 'rw',
+    isa => 'Bool',
+    default => 0,
+    predicate => 'has_override_process',
+    documentation => q(Instead of for my $sample (@sample){ DO STUFF } just DOSTUFF),
+    handles => {
+        set_override_process => 'set',
+        clear_override_process => 'unset',
+    },
 );
 
 =head3 indir outdir
@@ -1133,7 +1137,8 @@ sub dothings {
 
     if(exists $self->local_rule->{$key}->{local}){
         $self->local_attr(Data::Pairs->new($self->local_rule->{$key}->{local}));
-        $self->attr($self->local_attr);
+        $self->add_attr;
+        #$self->attr($self->local_attr);
         $self->create_attr;
     }
 
@@ -1185,7 +1190,6 @@ sub dothings {
 
     #Set bools back to false and reinitialize global vars
     $self->resample(0);
-    $self->override_process(0);
     $self->clear_attr;
     $self->attr($self->global_attr);
     $self->eval_attr;
@@ -1194,6 +1198,23 @@ sub dothings {
     if($self->enforce_struct){
         $self->indir($process_outdir);
     }
+}
+
+=head2 add_attr
+
+Add the local attr onto the global attr
+
+=cut
+
+sub add_attr{
+    my $self = shift;
+    my @keys = $self->local_attr->get_keys();
+
+    foreach my $key (@keys){
+        $self->attr->add($key => $self->local_attr->get_values($key));
+    }
+    $DB::single=2;
+    my  $thing= "thing";
 }
 
 =head2 write_rule_meta
@@ -1245,7 +1266,7 @@ sub write_process{
 
     $DB::single = 2;
 
-    if(!$self->has_override_process){
+    if(!$self->override_process){
         foreach my $sample (@{$self->samples}){
             $self->process_by_sample_outdir($sample) if $self->by_sample_outdir;
             $DB::single=2;
