@@ -596,6 +596,10 @@ Make the template for interpolating strings
 
 make attributes
 
+## add\_attr
+
+Add the local attr onto the global attr
+
 ## write\_rule\_meta
 
 ### write\_process

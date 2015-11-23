@@ -1,6 +1,8 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+
+0.12  2015-11-23 10:09:39 GST
     - Added global attr to eval call
 
 0.11  2015-11-22 13:01:23 GST
