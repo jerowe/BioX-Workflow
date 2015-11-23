@@ -1213,8 +1213,6 @@ sub add_attr{
     foreach my $key (@keys){
         $self->attr->add($key => $self->local_attr->get_values($key));
     }
-    $DB::single=2;
-    my  $thing= "thing";
 }
 
 =head2 write_rule_meta
