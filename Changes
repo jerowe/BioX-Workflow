@@ -1,6 +1,8 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+
+0.14  2015-11-25 12:19:54 GST
     Made some more changes to local_attr and outdir/indir
 
 0.13  2015-11-25 10:53:46 GST
