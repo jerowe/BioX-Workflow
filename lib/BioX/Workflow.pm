@@ -841,6 +841,35 @@ has 'sample_based' => (
      default => 0,
 );
 
+=head2 stash
+
+This isn't ever used in the code. Its just there incase you want to do some things with override_process
+
+It uses Moose::Meta::Attribute::Native::Trait::Hash and supports all the methods.
+
+        set_stash     => 'set',
+        get_stash     => 'get',
+        has_no_stash => 'is_empty',
+        num_stashs    => 'count',
+        delete_stash  => 'delete',
+        stash_pairs   => 'kv',
+
+=cut
+
+has 'stash' => (
+    is => 'rw',
+    isa => 'HashRef',
+    traits => ['Hash'],
+    default   => sub { {} },
+    handles   => {
+        set_stash     => 'set',
+        get_stash     => 'get',
+        has_no_stash => 'is_empty',
+        num_stashs    => 'count',
+        delete_stash  => 'delete',
+        stash_pairs   => 'kv',
+    },
+);
 
 =head2 Subroutines
 
@@ -1142,6 +1171,7 @@ sub dothings {
     $self->key($key);
     $camel_key= $key;
 
+
     if($self->auto_name){
         $DB::single=2;
         $self->outdir($self->outdir."/$camel_key");
@@ -1156,8 +1186,10 @@ sub dothings {
     if(exists $self->local_rule->{$key}->{local}){
         $DB::single=2;
         $self->local_attr(Data::Pairs->new($self->local_rule->{$key}->{local}));
+        #Make sure these aren't reset to global
+        $self->local_attr->set('outdir' => $self->outdir);
+        $self->local_attr->set('indir' => $self->indir);
         $self->add_attr;
-        #$self->attr($self->local_attr);
         $self->create_attr;
     }
     $DB::single=2;

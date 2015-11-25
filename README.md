@@ -548,6 +548,19 @@ Default Value. The outer loop is samples, not rules. Must be set in your global 
 
 If you ever have resample: 1 in your config you should NOT set this value to true!
 
+## stash
+
+This isn't ever used in the code. Its just there incase you want to do some things with override\_process
+
+It uses Moose::Meta::Attribute::Native::Trait::Hash and supports all the methods.
+
+        set_stash     => 'set',
+        get_stash     => 'get',
+        has_no_stash => 'is_empty',
+        num_stashs    => 'count',
+        delete_stash  => 'delete',
+        stash_pairs   => 'kv',
+
 ## Subroutines
 
 Subroutines can also be overriden and/or extended in the usual Moose fashion.
