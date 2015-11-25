@@ -492,6 +492,8 @@ has 'find_by_dir' => (
     isa => 'Bool',
     default => 0,
     documentation => q{Use this option when you sample names are directories},
+    predicate => 'has_find_by_dir',
+    clearer => 'clear_find_by_dir',
 );
 
 =head2 by_sample_outdir
@@ -521,6 +523,8 @@ has 'by_sample_outdir' => (
     isa => 'Bool',
     default => 0,
     documentation => q{When you want your output by sample},
+    clearer => 'clear_by_sample_outdir',
+    predicate => 'has_by_sample_outdir',
 );
 
 =head3 auto_name
@@ -542,6 +546,8 @@ has 'auto_name' => (
      is => 'rw',
      isa => 'Bool',
      default => 1,
+     clearer => 'clear_auto_name',
+     predicate => 'has_auto_name',
 );
 
 =head3 auto_input
@@ -555,6 +561,8 @@ has 'auto_input' => (
     is => 'rw',
     isa => 'Bool',
     default => 1,
+    clearer => 'clear_auto_input',
+    predicate => 'has_auto_input',
 );
 
 =head3 enforce_struct
@@ -567,6 +575,8 @@ has 'enforce_struct' => (
      is => 'rw',
      isa => 'Bool',
      default => 1,
+     clearer => 'clear_enforce_struct',
+     predicate => 'has_enforce_struct',
 );
 
 =head3 verbose
@@ -579,6 +589,8 @@ has 'verbose' => (
      is => 'rw',
      isa => 'Bool',
      default => 1,
+     clearer => 'clear_verbose',
+     predicate => 'has_verbose',
 );
 
 =head3 wait
@@ -591,7 +603,9 @@ has 'wait' => (
      is => 'rw',
      isa => 'Bool',
      default => 1,
-     documentation => q(Print 'wait' at the end of each rule. If you are running as a plain bash script you probably don't need this.)
+     documentation => q(Print 'wait' at the end of each rule. If you are running as a plain bash script you probably don't need this.),
+     clearer => 'clear_wait',
+     predicate => 'has_wait',
 );
 
 
@@ -682,9 +696,11 @@ Rule to find files
 =cut
 
 has 'file_rule' =>(
-     is => 'rw',
-     isa => 'Str',
-     default => sub { return "\\.[^.]*"; }
+    is => 'rw',
+    isa => 'Str',
+    default => sub { return "\\.[^.]*"; },
+    clearer => 'clear_file_rule',
+    predicate => 'has_file_rule',
 );
 
 =head3 No GetOpt Here
@@ -925,7 +941,7 @@ sub get_samples{
         @basename = map {  basename($_) }  @whole ;
     }
     else{
-                $DB::single=2;
+        $DB::single=2;
         @whole = find(file => name => qr/$text/, maxdepth => 1, in => $self->indir);
         @basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
     }
@@ -1024,6 +1040,7 @@ sub create_attr{
         $self->$k($v) if $v;
     }
 
+    $DB::single=2;
     $meta->make_immutable;
 }
 
@@ -1126,6 +1143,7 @@ sub dothings {
     $camel_key= $key;
 
     if($self->auto_name){
+        $DB::single=2;
         $self->outdir($self->outdir."/$camel_key");
         $process_outdir = $self->outdir;
         $self->make_outdir() unless $self->by_sample_outdir;
@@ -1136,11 +1154,13 @@ sub dothings {
     }
 
     if(exists $self->local_rule->{$key}->{local}){
+        $DB::single=2;
         $self->local_attr(Data::Pairs->new($self->local_rule->{$key}->{local}));
         $self->add_attr;
         #$self->attr($self->local_attr);
         $self->create_attr;
     }
+    $DB::single=2;
 
     if(! exists $self->local_rule->{$key}->{process}){
         die print "There is no process key! Dying...\n";
@@ -1211,7 +1231,8 @@ sub add_attr{
     my @keys = $self->local_attr->get_keys();
 
     foreach my $key (@keys){
-        $self->attr->add($key => $self->local_attr->get_values($key));
+        $DB::single=2;
+        $self->attr->set($key => $self->local_attr->get_values($key));
     }
 }
 
@@ -1277,6 +1298,7 @@ sub write_process{
         }
     }
     else{
+        $DB::single=2;
         $self->eval_attr;
         my $data = {self => \$self};
         $self->process_template($data);
