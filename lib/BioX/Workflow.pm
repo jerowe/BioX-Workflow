@@ -18,6 +18,7 @@ use IO::File;
 use Interpolation E => 'eval';
 use Text::Template qw(fill_in_file fill_in_string);
 use Data::Pairs;
+use Storable qw(dclone);
 
 use Carp::Always;
 
@@ -895,9 +896,9 @@ sub run {
     $self->class_load;
     $self->plugin_load;
 
-    $self->global_attr(Data::Pairs->new($array->{global}));
-
-    $self->attr($self->global_attr);
+    #Darn you data pairs and you're shallow copies!
+    $self->global_attr(Data::Pairs->new(dclone($self->yaml->{global})));
+    $self->attr(dclone($self->global_attr));
 
     $self->create_attr;
     $self->eval_attr;
@@ -970,7 +971,7 @@ sub get_samples{
         @basename = map {  basename($_) }  @whole ;
     }
     else{
-        $DB::single=2;
+        #$DB::single=2;
         @whole = find(file => name => qr/$text/, maxdepth => 1, in => $self->indir);
         @basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
     }
@@ -1069,7 +1070,7 @@ sub create_attr{
         $self->$k($v) if $v;
     }
 
-    $DB::single=2;
+    #$DB::single=2;
     $meta->make_immutable;
 }
 
@@ -1171,7 +1172,6 @@ sub dothings {
     $self->key($key);
     $camel_key= $key;
 
-
     if($self->auto_name){
         $DB::single=2;
         $self->outdir($self->outdir."/$camel_key");
@@ -1184,12 +1184,14 @@ sub dothings {
     }
 
     if(exists $self->local_rule->{$key}->{local}){
-        $DB::single=2;
-        $self->local_attr(Data::Pairs->new($self->local_rule->{$key}->{local}));
+        #$DB::single=2;
+        $self->local_attr(Data::Pairs->new(dclone($self->local_rule->{$key}->{local})));
         #Make sure these aren't reset to global
         $self->local_attr->set('outdir' => $self->outdir);
         $self->local_attr->set('indir' => $self->indir);
-        $self->add_attr;
+
+        $self->add_attr('local_attr');
+        $DB::single=2;
         $self->create_attr;
     }
     $DB::single=2;
@@ -1235,6 +1237,8 @@ sub dothings {
         print "$self->{comment_char}\n\n";
     }
 
+    $DB::single=2;
+
     $self->write_process();
 
     #Write after meta
@@ -1242,13 +1246,21 @@ sub dothings {
 
     #Set bools back to false and reinitialize global vars
     $self->resample(0);
-    $self->clear_attr;
-    $self->attr($self->global_attr);
+
+    $self->attr->clear;
+    $self->local_attr->clear;
+    $DB::single=2;
+
+    #$self->attr(Data::Pairs->new($self->yaml->{global}));
+    $self->add_attr('global_attr');
+    #$self->attr($self->global_attr);
     $self->eval_attr;
-    $self->local_attr(Data::Pairs->new([]));
+    $DB::single=2;
+    #$self->local_attr(Data::Pairs->new([]));
 
     if($self->enforce_struct){
         $self->indir($process_outdir);
+        #$self->outdir($self->yaml->global->{outdir});
     }
 }
 
@@ -1260,12 +1272,16 @@ Add the local attr onto the global attr
 
 sub add_attr{
     my $self = shift;
-    my @keys = $self->local_attr->get_keys();
+    my $type = shift;
 
+    my @keys = $self->$type->get_keys();
+
+    $DB::single=2;
     foreach my $key (@keys){
-        $DB::single=2;
-        $self->attr->set($key => $self->local_attr->get_values($key));
+        my($v) = $self->$type->get_values($key);
+        $self->attr->set($key => $v);
     }
+    $DB::single=2;
 }
 
 =head2 write_rule_meta
@@ -1276,7 +1292,7 @@ sub write_rule_meta{
     my($self, $meta) = @_;
 
     if(exists $self->local_rule->{$self->{key}}->{$meta}){
-        $DB::single=2;
+        #$DB::single=2;
         print "\n$self->{comment_char}\n";
         print "$self->{comment_char} ".$self->local_rule->{$self->key}->{after_meta}."\n";
         print "$self->{comment_char}\n\n";
@@ -1315,26 +1331,24 @@ sub write_process{
     $origout = $self->outdir;
     $origin = $self->indir;
 
-    $DB::single = 2;
+    $DB::single=2;
 
     if(!$self->override_process){
         foreach my $sample (@{$self->samples}){
             $self->process_by_sample_outdir($sample) if $self->by_sample_outdir;
-            $DB::single=2;
             $self->eval_attr($sample);
             my $data = {self => \$self, sample => $sample};
-            #$DB::single=2;
             $self->process_template($data);
             $self->outdir($origout);
             $self->indir($origin);
         }
     }
     else{
-        $DB::single=2;
         $self->eval_attr;
         my $data = {self => \$self};
         $self->process_template($data);
     }
+    $DB::single = 2;
 
     if($self->wait){
         print "\nwait\n";
@@ -1343,6 +1357,9 @@ sub write_process{
     $self->OUTPUT_to_INPUT;
 
     $self->pkey($self->key);
+
+    #$self->outdir($origout);
+    #$self->indir($origin);
 }
 
 =head3 process_by_sample_outdir
@@ -1361,6 +1378,7 @@ sub process_by_sample_outdir {
     $tt =~ s/$key/$sample\/$key/;
     $self->outdir($tt);
     $self->make_outdir;
+    $self->attr->set('outdir' => $self->outdir);
     $DB::single=2;
 
     $tt = $self->indir;
@@ -1368,21 +1386,18 @@ sub process_by_sample_outdir {
         $DB::single=2;
         $tt = "$tt/{\$sample}";
         $self->indir($tt);
-        $self->attr->set('indir' => $self->indir) if $self->attr->exists('indir');
     }
     elsif($self->has_pkey){
-        $DB::single=2;
         $key = $self->pkey;
         $tt =~ s/$key/$sample\/$key/;
         $self->indir($tt);
-        $self->attr->set('indir' => $self->indir) if $self->attr->exists('indir');
     }
     else{
         $DB::single=2;
         $tt = "$tt/$sample";
         $self->indir($tt);
-        $self->attr->set('indir' => $self->indir) if $self->attr->exists('indir');
     }
+    $self->attr->set('indir' => $self->indir);
 }
 
 

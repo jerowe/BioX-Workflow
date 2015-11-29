@@ -25,6 +25,7 @@ requires 'Data::Pairs';
 
 requires 'List::Compare';
 requires 'Carp::Always';
+requires 'Storable';
 
 requires "MooseX::Object::Pluggable";
 
