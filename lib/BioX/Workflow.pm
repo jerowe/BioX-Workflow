@@ -1070,7 +1070,7 @@ sub create_attr{
         $self->$k($v) if $v;
     }
 
-    #$DB::single=2;
+    $DB::single=2;
     $meta->make_immutable;
 }
 
@@ -1182,13 +1182,16 @@ sub dothings {
     if (exists $self->local_rule->{$key}->{override_process} && $self->local_rule->{$key}->{override_process} == 1){
         $self->override_process(1);
     }
+    else{
+        $self->override_process(0);
+    }
 
     if(exists $self->local_rule->{$key}->{local}){
         #$DB::single=2;
         $self->local_attr(Data::Pairs->new(dclone($self->local_rule->{$key}->{local})));
         #Make sure these aren't reset to global
-        $self->local_attr->set('outdir' => $self->outdir);
-        $self->local_attr->set('indir' => $self->indir);
+        $self->local_attr->set('outdir' => $self->outdir) unless $self->local_attr->exists('outdir');
+        $self->local_attr->set('indir' => $self->indir) unless $self->local_attr->exists('indir');
 
         $self->add_attr('local_attr');
         $DB::single=2;
@@ -1246,17 +1249,15 @@ sub dothings {
 
     #Set bools back to false and reinitialize global vars
     $self->resample(0);
+    $self->override_process(0);
 
     $self->attr->clear;
     $self->local_attr->clear;
     $DB::single=2;
 
-    #$self->attr(Data::Pairs->new($self->yaml->{global}));
     $self->add_attr('global_attr');
-    #$self->attr($self->global_attr);
     $self->eval_attr;
     $DB::single=2;
-    #$self->local_attr(Data::Pairs->new([]));
 
     if($self->enforce_struct){
         $self->indir($process_outdir);

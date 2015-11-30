@@ -1,6 +1,7 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+    - Bug fix on special indir/outdir vars
 
 0.15  2015-11-29 11:28:25 GST
     Bug fix - Data::Pairs making shallow copies so added Storable to cpanfile
