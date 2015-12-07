@@ -5,7 +5,7 @@
 #
 #        USAGE: ./biox-workflow-drake.pl
 #
-#  DESCRIPTION: Command line interface to BioX::Wrapper::Workflow::Drake
+#  DESCRIPTION: Command line interface to BioX::Workflow::Drake
 #
 #       AUTHOR: YOUR NAME (),
 # ORGANIZATION: Weill Cornell Medical College Qatar
@@ -18,7 +18,7 @@
 package Main;
 use Moose;
 
-extends 'BioX::Wrapper::Workflow::Drake';
+extends 'BioX::Workflow::Drake';
 
 Main->new_with_options->run;
 

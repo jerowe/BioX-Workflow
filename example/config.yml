@@ -1,7 +1,7 @@
 ---
 global:
-    - indir: /home/guests/jir2004/workflow
-    - outdir: /home/guests/jir2004/workflow/output
+    - indir: /home/jillian/projects/perl/BioX-Workflow/example
+    - outdir: /home/jillian/projects/perl/BioX-Workflow/example/OUT
     - file_rule: (.csv)$
 rules:
     - backup:

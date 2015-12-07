@@ -1,4 +1,4 @@
-/BioX-Wrapper-Writer-*
+/BioX-Workflow-*
 /.build
 /_build*
 /Build
@@ -6,3 +6,7 @@ MYMETA.*
 !META.json
 /.prove
 /example/.drake
+/local
+/local*
+/dev
+/dev*
