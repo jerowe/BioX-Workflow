@@ -544,11 +544,17 @@ Would create your directory structure /home/user/workflow/processed/normalize (i
 =cut
 
 has 'auto_name' => (
-     is => 'rw',
-     isa => 'Bool',
-     default => 1,
-     clearer => 'clear_auto_name',
-     predicate => 'has_auto_name',
+    traits  => ['Bool'],
+    is => 'rw',
+    isa => 'Bool',
+    default => 1,
+    #clearer => 'clear_auto_name',
+    predicate => 'has_auto_name',
+    handles =>{
+        enforce_struct => 'set',
+        clear_enforce_struct => 'unset',
+        clear_auto_name => 'unset',
+    },
 );
 
 =head3 auto_input
@@ -566,19 +572,16 @@ has 'auto_input' => (
     predicate => 'has_auto_input',
 );
 
-=head3 enforce_struct
+# Getting rid of this - its the same as auto_name
+# Put it in auto_name for compatibility
 
-Enforce a particular workflow where the outdirectory (outdir) from the previous rule is the indirectory for the current
-
-=cut
-
-has 'enforce_struct' => (
-     is => 'rw',
-     isa => 'Bool',
-     default => 1,
-     clearer => 'clear_enforce_struct',
-     predicate => 'has_enforce_struct',
-);
+#has 'enforce_struct' => (
+     #is => 'rw',
+     #isa => 'Bool',
+     #default => 1,
+     #clearer => 'clear_enforce_struct',
+     #predicate => 'has_enforce_struct',
+#);
 
 =head3 verbose
 
@@ -889,6 +892,26 @@ sub run {
 
     $self->print_opts;
 
+    $self->init_things;
+
+    if($self->verbose){
+        print "$self->{comment_char}\n";
+        print "$self->{comment_char} Starting Workflow\n";
+        print "$self->{comment_char}\n";
+    }
+
+    $self->write_pipeline;
+
+    if($self->verbose){
+        print "$self->{comment_char}\n";
+        print "$self->{comment_char} Ending Workflow\n";
+        print "$self->{comment_char}\n";
+    }
+}
+
+sub init_things {
+    my $self = shift;
+
     my $array =  LoadFile($self->workflow);
 
     $self->yaml($array);
@@ -906,20 +929,6 @@ sub run {
     $self->make_outdir;
 
     $self->get_samples;
-
-    if($self->verbose){
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char} Starting Workflow\n";
-        print "$self->{comment_char}\n";
-    }
-
-    $self->write_pipeline;
-
-    if($self->verbose){
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char} Ending Workflow\n";
-        print "$self->{comment_char}\n";
-    }
 }
 
 =head3 make_outdir
@@ -1098,7 +1107,6 @@ sub eval_attr {
         #$DB::single=2;
         $self->$k($text);
     }
-
     #$self->make_outdir if $self->attr->exists('OUTPUT');
     $self->make_outdir if $self->create_outdir;
 }
@@ -1153,71 +1161,171 @@ sub write_pipeline{
 sub dothings {
     my($self) = shift;
 
+    $DB::single=2;
 
-    #$DB::single=2;
-    my(@keys, $pairs,$camel_key, $key, $process_outdir);
+    $self->check_keys;
 
-    $self->local_attr(Data::Pairs->new([]));
+    $self->init_process_vars;
 
-    @keys = keys %{$self->local_rule};
+    $DB::single=2;
 
-    #TODO make these more informative messages
-    return unless @keys;
+    $self->process($self->local_rule->{$self->key}->{process});
+
+    $self->write_rule_meta('before_meta');
+
+    $DB::single=2;
+
+    $self->write_process();
+
+    $self->write_rule_meta('after_meta');
+
+    $self->clear_process_vars;
+
+    $self->indir($self->outdir."/".$self->pkey) if $self->auto_name;
+}
+
+=head2 check_keys
+
+There should be one key and one key only!
+
+=cut
+
+sub check_keys{
+    my $self = shift;
+    my @keys = keys %{$self->local_rule};
 
     if($#keys > 0){
         die print "We have a problem! There should only be one key. Please see the documentation!\n";
     }
+    elsif(! @keys){
+        die print "There are no rules. Please see the documenation.\n";
+    }
+    else{
+        $self->key($keys[0]);
+    }
 
-    $key = $keys[0];
-    $self->key($key);
-    $camel_key= $key;
+    if(! exists $self->local_rule->{$self->key}->{process}){
+        die print "There is no process key! Dying...\n";
+    }
+}
+
+=head2 clear_process_vars
+
+Clear the process vars
+
+=cut
+
+sub clear_process_vars {
+    my $self = shift;
+
+    #Set bools back to false and reinitialize global vars
+    $self->resample(0);
+    $self->override_process(0);
+
+    $self->attr->clear;
+    $self->local_attr->clear;
+    $DB::single=2;
+
+    $self->add_attr('global_attr');
+    $self->eval_attr;
+    $DB::single=2;
+}
+
+=head2 init_process_vars
+
+Initialize the process vars
+
+=cut
+
+sub init_process_vars {
+    my $self = shift;
 
     if($self->auto_name){
         $DB::single=2;
-        $self->outdir($self->outdir."/$camel_key");
-        $process_outdir = $self->outdir;
+        $self->outdir($self->outdir."/".$self->key);
         $self->make_outdir() unless $self->by_sample_outdir;
     }
 
-    if (exists $self->local_rule->{$key}->{override_process} && $self->local_rule->{$key}->{override_process} == 1){
+    #TODO move this over to local
+    if (exists $self->local_rule->{$self->key}->{override_process} && $self->local_rule->{$self->key}->{override_process} == 1){
         $self->override_process(1);
     }
     else{
         $self->override_process(0);
     }
 
-    if(exists $self->local_rule->{$key}->{local}){
+    $self->local_attr(Data::Pairs->new([]));
+    if(exists $self->local_rule->{$self->key}->{local}){
         #$DB::single=2;
-        $self->local_attr(Data::Pairs->new(dclone($self->local_rule->{$key}->{local})));
-        #Make sure these aren't reset to global
-        $self->local_attr->set('outdir' => $self->outdir) unless $self->local_attr->exists('outdir');
-        $self->local_attr->set('indir' => $self->indir) unless $self->local_attr->exists('indir');
-
-        $self->add_attr('local_attr');
-        $DB::single=2;
-        $self->create_attr;
+        $self->local_attr(Data::Pairs->new(dclone($self->local_rule->{$self->key}->{local})));
     }
+    #Make sure these aren't reset to global
+    ##YAY FOR TESTS
+    $self->local_attr->set('outdir' => $self->outdir) unless $self->local_attr->exists('outdir');
+    $self->local_attr->set('indir' => $self->indir) unless $self->local_attr->exists('indir');
+
+    $self->add_attr('local_attr');
     $DB::single=2;
+    $self->create_attr;
+    $self->get_samples if $self->resample;
+}
 
-    if(! exists $self->local_rule->{$key}->{process}){
-        die print "There is no process key! Dying...\n";
+=head2 add_attr
+
+Add the local attr onto the global attr
+
+=cut
+
+sub add_attr{
+    my $self = shift;
+    my $type = shift;
+
+    my @keys = $self->$type->get_keys();
+
+    $DB::single=2;
+    foreach my $key (@keys){
+        my($v) = $self->$type->get_values($key);
+        $self->attr->set($key => $v);
     }
 
-    $self->process($self->local_rule->{$key}->{process});
+    $DB::single=2;
+}
 
-    $self->write_rule_meta('before_meta');
+=head2 write_rule_meta
 
-    if($self->resample){
-        $self->get_samples;
+=cut
+
+sub write_rule_meta{
+    my($self, $meta) = @_;
+
+    #Get rid of this, all meta should be in local:
+    #print "META IS $meta\n";
+    #if(exists $self->local_rule->{$self->{key}}->{$meta}){
+        ##$DB::single=2;
+        #print "\n$self->{comment_char}\n";
+        #print "$self->{comment_char} ".$self->local_rule->{$self->key}->{$meta}."\n";
+        #print "$self->{comment_char}\n\n";
+    #}
+    #else{
+    print "\n$self->{comment_char}\n";
+    #if($meta eq "before_meta"){
+    #}
+    if($meta eq "after_meta"){
+        print "$self->{comment_char} Ending $self->{key}\n";
     }
+    print "$self->{comment_char}\n\n";
+    #}
 
+    return unless $meta eq "before_meta";
+    print "$self->{comment_char} Starting $self->{key}\n";
+    print "$self->{comment_char}\n\n";
     if($self->verbose){
         print "\n\n$self->{comment_char}\n";
         print "$self->{comment_char} Variables \n";
         print "$self->{comment_char} Indir: ".$self->indir."\n";
         print "$self->{comment_char} Outdir: ".$self->outdir."\n";
 
-        if(exists $self->local_rule->{$key}->{local}){
+        if(exists $self->local_rule->{$self->key}->{local}){
 
             print "$self->{comment_char} Local Variables:\n";
 
@@ -1239,76 +1347,6 @@ sub dothings {
         }
         print "$self->{comment_char}\n\n";
     }
-
-    $DB::single=2;
-
-    $self->write_process();
-
-    #Write after meta
-    $self->write_rule_meta('after_meta');
-
-    #Set bools back to false and reinitialize global vars
-    $self->resample(0);
-    $self->override_process(0);
-
-    $self->attr->clear;
-    $self->local_attr->clear;
-    $DB::single=2;
-
-    $self->add_attr('global_attr');
-    $self->eval_attr;
-    $DB::single=2;
-
-    if($self->enforce_struct){
-        $self->indir($process_outdir);
-        #$self->outdir($self->yaml->global->{outdir});
-    }
-}
-
-=head2 add_attr
-
-Add the local attr onto the global attr
-
-=cut
-
-sub add_attr{
-    my $self = shift;
-    my $type = shift;
-
-    my @keys = $self->$type->get_keys();
-
-    $DB::single=2;
-    foreach my $key (@keys){
-        my($v) = $self->$type->get_values($key);
-        $self->attr->set($key => $v);
-    }
-    $DB::single=2;
-}
-
-=head2 write_rule_meta
-
-=cut
-
-sub write_rule_meta{
-    my($self, $meta) = @_;
-
-    if(exists $self->local_rule->{$self->{key}}->{$meta}){
-        #$DB::single=2;
-        print "\n$self->{comment_char}\n";
-        print "$self->{comment_char} ".$self->local_rule->{$self->key}->{after_meta}."\n";
-        print "$self->{comment_char}\n\n";
-    }
-    else{
-        print "\n$self->{comment_char}\n";
-        if($meta eq "before_meta"){
-            print "$self->{comment_char} Starting $self->{key}\n";
-        }
-        elsif($meta eq "after_meta"){
-            print "$self->{comment_char} Ending $self->{key}\n";
-        }
-        print "$self->{comment_char}\n\n";
-    }
-
 
 }
 
