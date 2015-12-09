@@ -1,6 +1,7 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+    - Wrote tests and made a fix for local vars
 
 0.16  2015-11-30 10:45:01 GST
     - Bug fix on special indir/outdir vars
