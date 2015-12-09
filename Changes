@@ -1,6 +1,8 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+
+0.17  2015-12-09 12:49:15 GST
     - Wrote tests and made a fix for local vars
 
 0.16  2015-11-30 10:45:01 GST

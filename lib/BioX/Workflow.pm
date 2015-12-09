@@ -1,7 +1,7 @@
 package BioX::Workflow;
 
 use 5.008_005;
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 use Moose;
 use File::Find::Rule;
