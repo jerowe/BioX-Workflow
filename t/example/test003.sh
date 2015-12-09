@@ -1,5 +1,5 @@
 #
-# Samples: sample5, sample1, sample3, sample4, sample2
+# Samples: sample1, sample2, sample3, sample4, sample5
 #
 #
 # Starting Workflow
@@ -36,12 +36,12 @@
 
 echo "my_local_var" && \
 echo t/example/data/processed/test003/analysis && \
-cp t/example/data/raw/test003/sample5/sample5.csv t/example/data/processed/test003/sample5/backup/sample5.csv
+cp t/example/data/raw/test003/sample1/sample1.csv t/example/data/processed/test003/sample1/backup/sample1.csv
 
 
 echo "my_local_var" && \
 echo t/example/data/processed/test003/analysis && \
-cp t/example/data/raw/test003/sample1/sample1.csv t/example/data/processed/test003/sample1/backup/sample1.csv
+cp t/example/data/raw/test003/sample2/sample2.csv t/example/data/processed/test003/sample2/backup/sample2.csv
 
 
 echo "my_local_var" && \
@@ -56,7 +56,7 @@ cp t/example/data/raw/test003/sample4/sample4.csv t/example/data/processed/test0
 
 echo "my_local_var" && \
 echo t/example/data/processed/test003/analysis && \
-cp t/example/data/raw/test003/sample2/sample2.csv t/example/data/processed/test003/sample2/backup/sample2.csv
+cp t/example/data/raw/test003/sample5/sample5.csv t/example/data/processed/test003/sample5/backup/sample5.csv
 
 
 
@@ -86,13 +86,13 @@ wait
 #
 
 echo "my_local_new_var" && \
-echo "Working on t/example/data/processed/test003/sample5/backup/sample5.csv"
-grep -i "VARA" t/example/data/processed/test003/sample5/backup/sample5.csv >> t/example/data/processed/test003/sample5/grep_VARA/sample5.grep_VARA.csv
+echo "Working on t/example/data/processed/test003/sample1/backup/sample1.csv"
+grep -i "VARA" t/example/data/processed/test003/sample1/backup/sample1.csv >> t/example/data/processed/test003/sample1/grep_VARA/sample1.grep_VARA.csv
 
 
 echo "my_local_new_var" && \
-echo "Working on t/example/data/processed/test003/sample1/backup/sample1.csv"
-grep -i "VARA" t/example/data/processed/test003/sample1/backup/sample1.csv >> t/example/data/processed/test003/sample1/grep_VARA/sample1.grep_VARA.csv
+echo "Working on t/example/data/processed/test003/sample2/backup/sample2.csv"
+grep -i "VARA" t/example/data/processed/test003/sample2/backup/sample2.csv >> t/example/data/processed/test003/sample2/grep_VARA/sample2.grep_VARA.csv
 
 
 echo "my_local_new_var" && \
@@ -106,8 +106,8 @@ grep -i "VARA" t/example/data/processed/test003/sample4/backup/sample4.csv >> t/
 
 
 echo "my_local_new_var" && \
-echo "Working on t/example/data/processed/test003/sample2/backup/sample2.csv"
-grep -i "VARA" t/example/data/processed/test003/sample2/backup/sample2.csv >> t/example/data/processed/test003/sample2/grep_VARA/sample2.grep_VARA.csv
+echo "Working on t/example/data/processed/test003/sample5/backup/sample5.csv"
+grep -i "VARA" t/example/data/processed/test003/sample5/backup/sample5.csv >> t/example/data/processed/test003/sample5/grep_VARA/sample5.grep_VARA.csv
 
 
 
@@ -133,11 +133,11 @@ wait
 #
 
 echo "This should be overwritten" && \
-grep -i "VARB" t/example/data/processed/test003/sample5/grep_VARA/sample5.grep_VARA.csv >> t/example/data/processed/test003/sample5/grep_VARB/sample5.grep_VARA.grep_VARB.csv
+grep -i "VARB" t/example/data/processed/test003/sample1/grep_VARA/sample1.grep_VARA.csv >> t/example/data/processed/test003/sample1/grep_VARB/sample1.grep_VARA.grep_VARB.csv
 
 
 echo "This should be overwritten" && \
-grep -i "VARB" t/example/data/processed/test003/sample1/grep_VARA/sample1.grep_VARA.csv >> t/example/data/processed/test003/sample1/grep_VARB/sample1.grep_VARA.grep_VARB.csv
+grep -i "VARB" t/example/data/processed/test003/sample2/grep_VARA/sample2.grep_VARA.csv >> t/example/data/processed/test003/sample2/grep_VARB/sample2.grep_VARA.grep_VARB.csv
 
 
 echo "This should be overwritten" && \
@@ -149,7 +149,7 @@ grep -i "VARB" t/example/data/processed/test003/sample4/grep_VARA/sample4.grep_V
 
 
 echo "This should be overwritten" && \
-grep -i "VARB" t/example/data/processed/test003/sample2/grep_VARA/sample2.grep_VARA.csv >> t/example/data/processed/test003/sample2/grep_VARB/sample2.grep_VARA.grep_VARB.csv
+grep -i "VARB" t/example/data/processed/test003/sample5/grep_VARA/sample5.grep_VARA.csv >> t/example/data/processed/test003/sample5/grep_VARB/sample5.grep_VARA.grep_VARB.csv
 
 
 

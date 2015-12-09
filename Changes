@@ -1,6 +1,7 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+    - Fixed a test - samples were in a different order each time...
 
 0.17  2015-12-09 12:49:15 GST
     - Wrote tests and made a fix for local vars

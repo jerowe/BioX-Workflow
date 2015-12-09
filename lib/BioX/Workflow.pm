@@ -998,11 +998,13 @@ sub get_samples{
     if($self->find_by_dir){
         @whole = find(directory => name => qr/$text/, maxdepth => 1, in => $self->indir);
         @basename = map {  basename($_) }  @whole ;
+        @basename = sort(@basename);
     }
     else{
         #$DB::single=2;
         @whole = find(file => name => qr/$text/, maxdepth => 1, in => $self->indir);
         @basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
+        @basename = sort(@basename);
     }
 
     $self->samples(\@basename);
