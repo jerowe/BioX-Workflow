@@ -1,6 +1,8 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+
+0.18  2015-12-09 13:32:02 GST
     - Fixed a test - samples were in a different order each time...
 
 0.17  2015-12-09 12:49:15 GST
