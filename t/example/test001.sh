@@ -4,6 +4,12 @@
 #
 # Starting Workflow
 #
+#
+# Global Variables:
+#	indir: t/example/data/raw/test001
+#	outdir: t/example/data/processed/test001
+#	file_rule: (.csv)$
+#
 
 #
 #

@@ -894,21 +894,41 @@ sub run {
 
     $self->init_things;
 
-    if($self->verbose){
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char} Starting Workflow\n";
-        print "$self->{comment_char}\n";
-    }
+    $self->write_workflow_meta('start');
 
     $self->write_pipeline;
 
-    if($self->verbose){
+    $self->write_workflow_meta('end');
+}
+
+sub write_workflow_meta{
+    my $self = shift;
+    my $type = shift;
+
+    return unless $self->verbose;
+
+    if($type eq "start"){
+        print "$self->{comment_char}\n";
+        print "$self->{comment_char} Starting Workflow\n";
+        print "$self->{comment_char}\n";
+        print "$self->{comment_char}\n";
+        print "$self->{comment_char} Global Variables:\n";
+
+        my @keys = $self->global_attr->get_keys();
+
+        foreach my $k (@keys){
+            next unless $k;
+            my($v) = $self->global_attr->get_values($k);
+            print "$self->{comment_char}\t$k: ".$v."\n";
+        }
+        print "$self->{comment_char}\n";
+    }
+    elsif($type eq "end"){
         print "$self->{comment_char}\n";
         print "$self->{comment_char} Ending Workflow\n";
         print "$self->{comment_char}\n";
     }
 }
-
 sub init_things {
     my $self = shift;
 

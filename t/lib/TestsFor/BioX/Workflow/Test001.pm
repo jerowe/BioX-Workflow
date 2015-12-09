@@ -121,21 +121,14 @@ sub test_006 :Tags(output) {
 
     my $expected = slurp("$Bin/example/test001.sh");
 
+    #Can't just do run here because it collects datetime and options
     my $got = capture {
         $obj->init_things;
-        if($obj->verbose){
-            print "$obj->{comment_char}\n";
-            print "$obj->{comment_char} Starting Workflow\n";
-            print "$obj->{comment_char}\n";
-        }
+        $obj->write_workflow_meta('start');
 
         $obj->write_pipeline;
 
-        if($obj->verbose){
-            print "$obj->{comment_char}\n";
-            print "$obj->{comment_char} Ending Workflow\n";
-            print "$obj->{comment_char}\n";
-        }
+        $obj->write_workflow_meta('end');
     };
     is($got, $expected, "Got expected output!" );
     ok(-d "$Bin/example/data/processed/test001");

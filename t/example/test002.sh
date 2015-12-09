@@ -4,6 +4,14 @@
 #
 # Starting Workflow
 #
+#
+# Global Variables:
+#	indir: t/example/data/raw/test002
+#	outdir: t/example/data/processed/test002
+#	file_rule: (sample.*)$
+#	by_sample_outdir: 1
+#	find_by_dir: 1
+#
 
 #
 #
