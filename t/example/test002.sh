@@ -1,5 +1,5 @@
 #
-# Samples: sample5, sample1, sample3, sample, sample4, sample2
+# Samples: sample5, sample1, sample3, sample4, sample2
 #
 #
 # Starting Workflow
@@ -32,8 +32,6 @@ cp t/example/data/raw/test002/sample5/sample5.csv t/example/data/processed/test0
 cp t/example/data/raw/test002/sample1/sample1.csv t/example/data/processed/test002/sample1/backup/sample1.csv
 
 cp t/example/data/raw/test002/sample3/sample3.csv t/example/data/processed/test002/sample3/backup/sample3.csv
-
-cp t/example/data/raw/test002/sample/sample.csv t/example/data/processed/test002/sample/backup/sample.csv
 
 cp t/example/data/raw/test002/sample4/sample4.csv t/example/data/processed/test002/sample4/backup/sample4.csv
 
@@ -73,10 +71,6 @@ echo "Working on t/example/data/processed/test002/sample3/backup/sample3.csv"
 grep -i "VARA" t/example/data/processed/test002/sample3/backup/sample3.csv >> t/example/data/processed/test002/sample3/grep_VARA/sample3.grep_VARA.csv
 
 
-echo "Working on t/example/data/processed/test002/sample/backup/sample.csv"
-grep -i "VARA" t/example/data/processed/test002/sample/backup/sample.csv >> t/example/data/processed/test002/sample/grep_VARA/sample.grep_VARA.csv
-
-
 echo "Working on t/example/data/processed/test002/sample4/backup/sample4.csv"
 grep -i "VARA" t/example/data/processed/test002/sample4/backup/sample4.csv >> t/example/data/processed/test002/sample4/grep_VARA/sample4.grep_VARA.csv
 
@@ -114,9 +108,6 @@ grep -i "VARB" t/example/data/processed/test002/sample1/grep_VARA/sample1.grep_V
 
 
 grep -i "VARB" t/example/data/processed/test002/sample3/grep_VARA/sample3.grep_VARA.csv >> t/example/data/processed/test002/sample3/grep_VARB/sample3.grep_VARA.grep_VARB.csv
-
-
-grep -i "VARB" t/example/data/processed/test002/sample/grep_VARA/sample.grep_VARA.csv >> t/example/data/processed/test002/sample/grep_VARB/sample.grep_VARA.grep_VARB.csv
 
 
 grep -i "VARB" t/example/data/processed/test002/sample4/grep_VARA/sample4.grep_VARA.csv >> t/example/data/processed/test002/sample4/grep_VARB/sample4.grep_VARA.grep_VARB.csv
