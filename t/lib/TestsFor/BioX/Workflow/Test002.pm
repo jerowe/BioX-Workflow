@@ -45,6 +45,7 @@ sub test_006 :Tags(output) {
             ok(-d "$Bin/example/data/processed/test002/$sample/$process", "Sample $sample Process $process dir exists");
         }
     }
+    my $cwd = cwd();
 }
 
 1;

@@ -1320,23 +1320,11 @@ sub add_attr{
 sub write_rule_meta{
     my($self, $meta) = @_;
 
-    #Get rid of this, all meta should be in local:
-    #print "META IS $meta\n";
-    #if(exists $self->local_rule->{$self->{key}}->{$meta}){
-        ##$DB::single=2;
-        #print "\n$self->{comment_char}\n";
-        #print "$self->{comment_char} ".$self->local_rule->{$self->key}->{$meta}."\n";
-        #print "$self->{comment_char}\n\n";
-    #}
-    #else{
     print "\n$self->{comment_char}\n";
-    #if($meta eq "before_meta"){
-    #}
     if($meta eq "after_meta"){
         print "$self->{comment_char} Ending $self->{key}\n";
     }
     print "$self->{comment_char}\n\n";
-    #}
 
     return unless $meta eq "before_meta";
     print "$self->{comment_char} Starting $self->{key}\n";

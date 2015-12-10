@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Generated at: 2015-11-22T09:16:16
+# Generated at: 2015-12-10T09:35:49
 # This file was generated with the following options
 #	--workflow	config2.yml
 #
@@ -12,8 +12,19 @@
 #
 # Starting Workflow
 #
+#
+# Global Variables:
+#	ROOT: /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA
+#	indir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA
+#	outdir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT
+#	file_rule: (SAMPLE.*)$
+#	by_sample_outdir: 1
+#	find_by_dir: 1
+#
 
 #
+#
+
 # Starting copy1
 #
 
@@ -28,6 +39,8 @@
 #	TRIMMOMATIC: {$self->ROOT}/{$sample}_TRIMMOMATIC_THING.gz
 #	before_meta: 
 #HPC mem=24GB
+#	outdir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/copy1
+#	indir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA
 #
 
 echo "Working on /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE1/SAMPLE1.csv"
@@ -47,6 +60,8 @@ wait
 
 
 #
+#
+
 # Starting copy2
 #
 
@@ -65,15 +80,16 @@ wait
 #HPC mem=24GB
 #
 
+#	outdir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/copy2
 #
 
 echo "Working on /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE1/SAMPLE1.csv" && \
-    echo "This should be UNDEF " && \
+    echo "This should be UNDEF /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE2_TRIMMOMATIC_THING.gz" && \
     cp "/home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE1/SAMPLE1.csv" "/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/SAMPLE1/copy2/SAMPLE1.csv"
 
 
 echo "Working on /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE2/SAMPLE2.csv" && \
-    echo "This should be UNDEF " && \
+    echo "This should be UNDEF /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE2_TRIMMOMATIC_THING.gz" && \
     cp "/home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA/SAMPLE2/SAMPLE2.csv" "/home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT/SAMPLE2/copy2/SAMPLE2.csv"
 
 
