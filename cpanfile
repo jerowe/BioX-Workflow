@@ -29,6 +29,8 @@ requires 'Storable';
 
 requires "MooseX::Object::Pluggable";
 
+requires 'Slurp';
+
 # requires 'Some::Module', 'VERSION';
 
 on test => sub {
