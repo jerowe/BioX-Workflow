@@ -1,6 +1,8 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+
+0.19  2015-12-16 13:55:12 GST
     - Added Slurp to dependencies
 
 0.18  2015-12-09 13:32:02 GST
