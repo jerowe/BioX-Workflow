@@ -11,6 +11,7 @@ use Cwd;
 use Data::Dumper;
 use List::Compare;
 use YAML::XS 'LoadFile';
+use Config::Any;
 use String::CamelCase qw(camelize decamelize wordsplit);
 use Data::Dumper;
 use Class::Load ':all';
@@ -146,7 +147,7 @@ This top part here is the metadata. It tells you the options used to run the scr
 
     #
     # This file was generated with the following options
-    #	--workflow	config.yml
+    #	--workflow	workflow.yml
     #
 
 If --verbose is enabled, and it is by default, you'll see some variables printed out for your benefit
@@ -929,12 +930,11 @@ sub write_workflow_meta{
         print "$self->{comment_char}\n";
     }
 }
+
 sub init_things {
     my $self = shift;
 
-    my $array =  LoadFile($self->workflow);
-
-    $self->yaml($array);
+    $self->workflow_load;
 
     $self->class_load;
     $self->plugin_load;
@@ -949,6 +949,17 @@ sub init_things {
     $self->make_outdir;
 
     $self->get_samples;
+}
+
+sub workflow_load {
+    my $self = shift;
+
+    my $cfg = Config::Any->load_files({files => [$self->workflow], use_ext => 1});
+
+    for (@$cfg) {
+        my ($filename, $config) = %$_;
+        $self->yaml($config);
+    }
 }
 
 =head3 make_outdir
@@ -997,6 +1008,8 @@ sub get_samples{
 
     if($self->find_by_dir){
         @whole = find(directory => name => qr/$text/, maxdepth => 1, in => $self->indir);
+        #File find puts directory we are looking in, not just subdirs
+        shift @whole;
         @basename = map {  basename($_) }  @whole ;
         @basename = sort(@basename);
     }

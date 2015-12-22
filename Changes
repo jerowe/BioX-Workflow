@@ -1,6 +1,7 @@
 Revision history for BioX-Writer
 
 {{$NEXT}}
+    - Made a change to looking at dirs for samples
 
 0.19  2015-12-16 13:55:12 GST
     - Added Slurp to dependencies
