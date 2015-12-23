@@ -108,7 +108,7 @@ This top part here is the metadata. It tells you the options used to run the scr
 
     #
     # This file was generated with the following options
-    #   --workflow      config.yml
+    #   --workflow      workflow.yml
     #
 
 If --verbose is enabled, and it is by default, you'll see some variables printed out for your benefit

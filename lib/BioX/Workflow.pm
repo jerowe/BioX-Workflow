@@ -1009,7 +1009,7 @@ sub get_samples{
     if($self->find_by_dir){
         @whole = find(directory => name => qr/$text/, maxdepth => 1, in => $self->indir);
         #File find puts directory we are looking in, not just subdirs
-        shift @whole;
+        @basename = grep { $_ !=  basename($self->{indir})  } @basename;
         @basename = map {  basename($_) }  @whole ;
         @basename = sort(@basename);
     }
