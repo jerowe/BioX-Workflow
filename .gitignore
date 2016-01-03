@@ -10,3 +10,4 @@ MYMETA.*
 /local*
 /dev
 /dev*
+inotify-hookable.sh

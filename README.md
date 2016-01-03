@@ -108,7 +108,7 @@ This top part here is the metadata. It tells you the options used to run the scr
 
     #
     # This file was generated with the following options
-    #   --workflow      config.yml
+    #   --workflow      workflow.yml
     #
 
 If --verbose is enabled, and it is by default, you'll see some variables printed out for your benefit
@@ -473,10 +473,6 @@ Would create your directory structure /home/user/workflow/processed/normalize (i
 This is similar to the auto\_name function in the BioX::Workflow.
 Instead this says each input should be the previous output.
 
-### enforce\_struct
-
-Enforce a particular workflow where the outdirectory (outdir) from the previous rule is the indirectory for the current
-
 ### verbose
 
 Output some more things
@@ -608,6 +604,18 @@ Make the template for interpolating strings
 ### create\_attr
 
 make attributes
+
+## check\_keys
+
+There should be one key and one key only!
+
+## clear\_process\_vars
+
+Clear the process vars
+
+## init\_process\_vars
+
+Initialize the process vars
 
 ## add\_attr
 

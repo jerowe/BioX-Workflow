@@ -26,11 +26,15 @@ requires 'Data::Pairs';
 requires 'List::Compare';
 requires 'Carp::Always';
 requires 'Storable';
+requires 'Config::Any';
 
 requires "MooseX::Object::Pluggable";
+
+requires 'Slurp';
 
 # requires 'Some::Module', 'VERSION';
 
 on test => sub {
-    requires 'Test::More', '0.96';
+    requires 'Test::More';
+    requires 'Test::Class::Moose';
 };
