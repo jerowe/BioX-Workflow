@@ -2,9 +2,9 @@
 plugins:
     - FileDetails
 global:
-    - ROOT: /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA
-    - indir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/DATA
-    - outdir: /home/jillian/projects/perl/BioX-Workflow/example/bydir/OUT
+    - ROOT: data/raw
+    - indir: data/raw
+    - outdir: data/processed
     - file_rule: (.*)$
     - by_sample_outdir: 1
     - find_by_dir: 1
@@ -35,7 +35,7 @@ rules:
         local:
             - create_outdir: 0
         process: |
-            "there should be no outdir\n";
+            "#there should be no outdir\n";
 
 
 

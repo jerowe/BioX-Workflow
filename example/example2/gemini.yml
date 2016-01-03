@@ -1,23 +1,21 @@
 ---
 global:
-    - indir: /home/guests/jir2004/perlmodule/BioX-Wrapper-Writer/example
-    - outdir: /home/guests/jir2004/perlmodule/BioX-Wrapper-Writer/example/gemini-wrapper
+    - ROOT: data/raw
+    - indir: data/raw
+    - outdir: data/processed
     - file_rule: (.vcf)$|(.vcf.gz)$
-    - infile:
 rules:
     - bgzip:
-        local:
-            - indir: /home/guests/jir2004/perlmodule/BioX-Wrapper-Writer/example
-            - file_rule: (.vcf)$
-            - resample: 1
-        before_meta: bgzip and tabix index uncompressed files
-        after_meta: finished bgzip
-        process: bgzip {$self->{indir}}/{$sample}.vcf && tabix {$self->{indir}}/{$sample}.vcf.gz
+        process: |
+            {
+                if(! -f "$self->{indir}/$sample.vcf.gz"){
+                    $OUT .= "bgzip $self->{indir}/$sample.vcf && tabix $self->{indir}/$sample.vcf.gz\n";
+                }
+
+            }
     - normalize_snpeff:
         local:
-            - indir: /home/guests/jir2004/perlmodule/BioX-Wrapper-Writer/example
-            - file_rule: (.vcf)$|(.vcf.gz)$
-            - resample: 1
+            - indir: "{$self->ROOT}"
         process: |
             bcftools view {$self->indir}/{$sample}.vcf.gz | sed 's/ID=AD,Number=./ID=AD,Number=R/' \
                 | vt decompose -s - \
