@@ -319,6 +319,8 @@ Rules are processed in the order they appear.
 Before any rules are processed, first the samples are found. These are grepped using File::Basename, the indir, and the file_rule variable. The
 default is to get rid of the everything after the final '.' .
 
+=cut
+
 =head2 Overriding Processes
 
 By default your process is evaluated as
@@ -453,6 +455,35 @@ You shouldn't really need to look here unless you have some reason to do some se
 
 Moose attributes. Technically any of these can be changed, but may break everything.
 
+=head2 select_rules
+
+Select a subsection of rules
+
+=cut
+
+has 'select_rules' => (
+    traits  => ['Array'],
+    is      => 'rw',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    required => 0,
+    handles => {
+        all_select_rules    => 'elements',
+        add_select_rule     => 'push',
+        map_select_rules    => 'map',
+        filter_select_rules => 'grep',
+        find_select_rule    => 'first',
+        get_select_rule     => 'get',
+        join_select_rules   => 'join',
+        count_select_rules  => 'count',
+        has_select_rules    => 'count',
+        has_no_select_rules => 'is_empty',
+        sorted_select_rules => 'sort',
+    },
+    documentation => q{Select a subselection of rules to choose from},
+);
+
+
 =head3 resample
 
 Boolean value get new samples based on indir/file_rule or no
@@ -528,6 +559,22 @@ has 'by_sample_outdir' => (
     clearer => 'clear_by_sample_outdir',
     predicate => 'has_by_sample_outdir',
 );
+
+=head3 min
+
+Print the workflow as 2 files.
+
+    #run-workflow.sh
+    export SAMPLE=sampleN && ./run_things
+
+=cut
+
+has 'min' => (
+    is => 'rw',
+    isa => 'Bool',
+    default => 0,
+);
+
 
 =head3 auto_name
 
@@ -780,8 +827,25 @@ has 'infiles' => (
 =cut
 
 has 'samples' => (
-     is => 'rw',
-     isa => 'ArrayRef',
+    traits  => ['Array'],
+    is => 'rw',
+    isa     => 'ArrayRef[Str]',
+    default => sub { [] },
+    required => 0,
+    handles => {
+        all_samples    => 'elements',
+        add_sample     => 'push',
+        map_samples    => 'map',
+        filter_samples => 'grep',
+        find_sample    => 'first',
+        get_sample     => 'get',
+        join_samples   => 'join',
+        count_samples  => 'count',
+        has_samples    => 'count',
+        has_no_samples => 'is_empty',
+        sorted_samples => 'sort',
+    },
+    documentation => q{Supply samples on the command line as --samples sample1 --samples sample2, or find through file_rule.}
 );
 
 =head3 process
@@ -998,11 +1062,23 @@ Could have
 
 =cut
 
+#has 'get_samples_coderef' => (
+    #traits  => ['Code'],
+    #is      => 'ro',
+    #isa     => 'CodeRef',
+    #default => sub {
+    #},
+#);
+
 sub get_samples{
     my($self) = shift;
     my(@whole, @basename, $text);
 
-    return if $self->attr->exists('samples');
+    if($self->has_samples && ! $self->resample){
+        my(@samples) = $self->sorted_samples;
+        $self->samples(\@samples);
+        return;
+    }
 
     $text = $self->file_rule;
 
@@ -1163,33 +1239,60 @@ sub clear_attr {
 sub write_pipeline{
     my($self) = shift;
 
-    my $process = $self->yaml->{rules};
-
-    die print "Where are the rules?\n" unless $process;
-
-    # This is untested with resampling!
-    if($self->sample_based){
+    #Min and Sample_Based Mode will break with --resample
+    if($self->min){
+        $self->write_min_files;
+        $self->process_rules;
+    }
+    elsif($self->sample_based){
         #Store the samples
         my $sample_store = $self->samples;
-
         foreach my $sample (@$sample_store){
             $self->samples([$sample]);
-            foreach my $p (@{$process}){
-                next unless $p;
-                $self->local_rule($p);
-                $self->dothings;
-            }
+            $self->process_rules;
         }
     }
     elsif($self->rule_based){
-        foreach my $p (@{$process}){
-            next unless $p;
-            $self->local_rule($p);
-            $self->dothings;
-        }
+        $self->process_rules;
     }
     else{
         die print "Workflow must be rule based or sample based!\n";
+    }
+}
+
+sub write_min_files{
+    my($self) = shift;
+
+    open(my $fh, '>', 'run-workflow.sh') or die print "Could not open file $!\n";
+
+    print $fh "#!/bin/bash\n\n";
+
+    my $cwd = cwd();
+    foreach my $sample (@{$self->samples}){
+        print $fh <<EOF;
+export SAMPLE=$sample && ./workflow.sh
+EOF
+    }
+
+    close $fh;
+
+    chmod 0777, 'run-workflow.sh';
+
+    $self->samples(["\${SAMPLE}"]);
+};
+
+sub process_rules {
+    my $self = shift;
+
+    my $process;
+    $process = $self->yaml->{rules};
+
+    die print "Where are the rules?\n" unless $process;
+
+    foreach my $p (@{$process}){
+        next unless $p;
+            $self->local_rule($p);
+            $self->dothings;
     }
 }
 
@@ -1201,6 +1304,17 @@ sub dothings {
     $self->check_keys;
 
     $self->init_process_vars;
+
+    if($self->has_select_rules){
+        my $p = $self->key;
+        if(! $self->filter_select_rules( sub {/^$p$/} ) ){
+            $self->clear_process_vars;
+
+            $self->pkey($self->key);
+            $self->indir($self->outdir."/".$self->pkey) if $self->auto_name;
+            return;
+        }
+    }
 
     $DB::single=2;
 
