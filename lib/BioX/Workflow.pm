@@ -7,7 +7,7 @@ use Moose;
 use File::Find::Rule;
 use File::Basename;
 use File::Path qw(make_path remove_tree);
-use Cwd;
+use Cwd qw(abs_path getcwd);
 use Data::Dumper;
 use List::Compare;
 use YAML::XS 'LoadFile';
@@ -20,6 +20,7 @@ use Interpolation E => 'eval';
 use Text::Template qw(fill_in_file fill_in_string);
 use Data::Pairs;
 use Storable qw(dclone);
+use MooseX::Types::Path::Tiny qw/Path Paths AbsPath/;
 
 use Carp::Always;
 
@@ -687,7 +688,8 @@ has 'override_process' => (
 
 has 'indir'  => (
     is => 'rw',
-    isa => 'Str',
+    isa => AbsPath,
+    coerce => 1,
     default => sub {getcwd();},
     predicate => 'has_indir',
     clearer => 'clear_indir',
@@ -696,7 +698,8 @@ has 'indir'  => (
 
 has 'outdir'  => (
     is => 'rw',
-    isa => 'Str',
+    isa => AbsPath,
+    coerce => 1,
     default => sub {getcwd();},
     predicate => 'has_outdir',
     clearer => 'clear_outdir',
@@ -1185,7 +1188,12 @@ sub create_attr{
         my($v) = $self->attr->get_values($k);
 
         if(! exists $seen{$k}){
-            $meta->add_attribute($k => (is => 'rw', predicate => "has_$k", clearer => "clear_$k"));
+            if($k =~ m/_dir$/){
+                $meta->add_attribute($k => (is => 'rw', isa => AbsPath, coerce => 1, predicate => "has_$k", clearer => "clear_$k"));
+            }
+            else{
+                $meta->add_attribute($k => (is => 'rw', predicate => "has_$k", clearer => "clear_$k"));
+            }
         }
         $self->$k($v) if $v;
     }
@@ -1202,8 +1210,8 @@ sub eval_attr {
     my @keys = $self->attr->get_keys();
 
     foreach my $k (@keys){
+        next unless $k;
         my($v) = $self->attr->get_values($k);
-
         next unless $v;
 
         my $template = $self->make_template($v);
@@ -1433,6 +1441,8 @@ sub add_attr{
 
     $DB::single=2;
     foreach my $key (@keys){
+        next unless $key;
+
         my($v) = $self->$type->get_values($key);
         $self->attr->set($key => $v);
     }

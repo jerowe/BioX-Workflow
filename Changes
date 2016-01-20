@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow
 
 {{$NEXT}}
+    - Made change so indir/outdir, and any vars ending in _dir will be coereced
+      as absolute path
 
 0.21  2016-01-04 12:14:12 GST
     - Added minmode, like in Drake
