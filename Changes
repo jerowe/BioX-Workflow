@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow
 
 {{$NEXT}}
+
+0.22  2016-01-20 11:38:49 GST
     - Made change so indir/outdir, and any vars ending in _dir will be coereced
       as absolute path
 
