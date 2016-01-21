@@ -21,6 +21,7 @@ use Text::Template qw(fill_in_file fill_in_string);
 use Data::Pairs;
 use Storable qw(dclone);
 use MooseX::Types::Path::Tiny qw/Path Paths AbsPath/;
+use List::Uniq ':all';
 
 use Carp::Always;
 
@@ -753,7 +754,7 @@ Rule to find files
 has 'file_rule' =>(
     is => 'rw',
     isa => 'Str',
-    default => sub { return "\\.[^.]*"; },
+    default => sub { return "(.*)"; },
     clearer => 'clear_file_rule',
     predicate => 'has_file_rule',
 );
@@ -1093,20 +1094,41 @@ sub get_samples{
         @basename = sort(@basename);
     }
     else{
-        #$DB::single=2;
+        $DB::single=2;
         @whole = find(file => name => qr/$text/, maxdepth => 1, in => $self->indir);
-        @basename = map {  my @tmp = fileparse($_,  qr/$text/); $tmp[0] }  @whole ;
+        #AAAH DOESN"T WORK
+        #@basename = map {  my @tmp = fileparse($_); my($m) = $tmp[0] =~ qr/$text/; $m }  @whole ;
+        @basename = map{ $self->match_samples($_, $text) } @whole;
+        @basename= uniq(@basename);
         @basename = sort(@basename);
     }
 
     $self->samples(\@basename);
     $self->infiles(\@whole);
 
+        $DB::single=2;
     if($self->verbose){
         print "$self->{comment_char}\n";
         print "$self->{comment_char} Samples: ",join(", ", @{$self->samples})."\n";
         print "$self->{comment_char}\n";
     }
+}
+
+=head2 match_samples
+
+Match samples based on regex written in file_rule
+
+=cut
+
+sub match_samples{
+    my $self = shift;
+    my $file = shift;
+    my $text = shift;
+
+    my @tmp = fileparse($_);
+    my($m) = $tmp[0] =~ qr/$text/;
+
+    return $m
 }
 
 
