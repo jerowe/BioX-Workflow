@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow
 
 {{$NEXT}}
+
+0.23  2016-01-21 12:12:41 GST
     - Stupid regexp were broken
 
 0.22  2016-01-20 11:38:49 GST
