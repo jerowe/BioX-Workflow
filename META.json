@@ -56,12 +56,14 @@
             "IO::File" : "0",
             "Interpolation" : "0",
             "List::Compare" : "0",
+            "List::Uniq" : "0",
             "Moose" : "0",
             "MooseX::Getopt" : "0",
             "MooseX::Getopt::Usage" : "0",
             "MooseX::Getopt::Usage::Role::Man" : "0",
             "MooseX::Object::Pluggable" : "0",
             "MooseX::SimpleConfig" : "0",
+            "MooseX::Types::Path::Tiny" : "0",
             "Slurp" : "0",
             "Storable" : "0",
             "String::CamelCase" : "0",
@@ -89,7 +91,7 @@
          "web" : "https://bitbucket.org/jerowe/biox-workflow"
       }
    },
-   "version" : "0.22",
+   "version" : "0.23",
    "x_contributors" : [
       "Jillian Rowe <jir2004@qatar-med.cornell.edu>"
    ]

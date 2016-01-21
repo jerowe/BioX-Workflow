@@ -600,6 +600,10 @@ Could have
         dostuff
     }
 
+## match\_samples
+
+Match samples based on regex written in file\_rule
+
 ### plugin\_load
 
 Load plugins defined in yaml with MooseX::Object::Pluggable

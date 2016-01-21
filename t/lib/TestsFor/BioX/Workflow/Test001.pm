@@ -33,7 +33,7 @@ sub test_002 : Tags(construct) {
 global:
     - indir: t/example/data/raw/test001
     - outdir: t/example/data/processed/test001
-    - file_rule: (.csv)\$
+    - file_rule: (.*).csv\$
 rules:
     - backup:
         process: cp {\$self->indir}/{\$sample}.csv {\$self->outdir}/{\$sample}.csv
@@ -70,7 +70,7 @@ sub test_003 : Tags(init_things) {
     my $aref = [
         { indir     => "t/example/data/raw/test001" },
         { outdir    => "t/example/data/processed/test001" },
-        { file_rule => '(.csv)$' }
+        { file_rule => '(.*).csv$' }
     ];
     is_deeply( $obj->yaml->{global}, $aref, "Global vars are ok" );
 }
