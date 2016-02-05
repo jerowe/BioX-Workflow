@@ -50,6 +50,8 @@ Most of the functionality can be accessed through the biox-workflow.pl script.
 
 This module was written with Bioinformatics workflows in mind, but should be extensible to any sort of workflow or pipeline.
 
+The documentation is being refactored to a wiki format.
+
 =head1 Philosophy
 
 Most bioinformatics workflows involve starting with a set of samples, and
