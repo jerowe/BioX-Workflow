@@ -17,6 +17,7 @@
 #	override_process: 0
 #	rule_based: 1
 #	verbose: 1
+#	create_outdir: 1
 #	ROOT: t/example/data/processed/test003
 #	file_rule: (sample.*)$
 #	by_sample_outdir: 1
