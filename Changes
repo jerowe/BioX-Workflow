@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow
 
 {{$NEXT}}
+
+0.24  2016-02-18 12:14:28 GST
     - Added bugfix for wait: 0
 
 0.23  2016-01-21 12:12:41 GST
