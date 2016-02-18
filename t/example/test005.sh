@@ -1,23 +1,24 @@
 #!/bin/bash
-
 #
-# Generated at: 2016-01-04T06:13:16
-# This file was generated with the following options
-#	--select_rules	backup
-#	--select_rules	grep_VARA
-#	--workflow	t/example/test004.yml
-#	--samples	sample2
-#	--samples	sample1
+# Samples: sample1, sample2, sample3, sample4, sample5
 #
-
 #
 # Starting Workflow
 #
 #
 # Global Variables:
-#	indir: t/example/data/raw/test004
-#	outdir: t/example/data/processed/test004
-#	file_rule: (.csv)$
+#	resample: 0
+#	wait: 1
+#	auto_input: 1
+#	coerce_paths: 1
+#	auto_name: 1
+#	indir: t/example/data/raw/test005
+#	outdir: t/example/data/processed/test005
+#	min: 1
+#	override_process: 0
+#	rule_based: 1
+#	verbose: 1
+#	file_rule: (.*).csv
 #
 
 #
@@ -30,13 +31,11 @@
 
 #
 # Variables 
-# Indir: t/example/data/raw/test004
-# Outdir: t/example/data/processed/test004/backup
+# Indir: /home/jillian/projects/perl/BioX-Workflow/t/example/data/raw/test005
+# Outdir: /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/backup
 #
 
-cp t/example/data/raw/test004/sample1.csv t/example/data/processed/test004/backup/sample1.csv
-
-cp t/example/data/raw/test004/sample2.csv t/example/data/processed/test004/backup/sample2.csv
+cp /home/jillian/projects/perl/BioX-Workflow/t/example/data/raw/test005/${SAMPLE}.csv /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/backup/${SAMPLE}.csv
 
 
 wait
@@ -56,16 +55,12 @@ wait
 
 #
 # Variables 
-# Indir: t/example/data/processed/test004/backup
-# Outdir: t/example/data/processed/test004/grep_VARA
+# Indir: /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/backup
+# Outdir: /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/grep_VARA
 #
 
-echo "Working on t/example/data/processed/test004/backup/sample1.csv"
-grep -i "VARA" t/example/data/processed/test004/backup/sample1.csv >> t/example/data/processed/test004/grep_VARA/sample1.grep_VARA.csv
-
-
-echo "Working on t/example/data/processed/test004/backup/sample2.csv"
-grep -i "VARA" t/example/data/processed/test004/backup/sample2.csv >> t/example/data/processed/test004/grep_VARA/sample2.grep_VARA.csv
+echo "Working on /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/backup/${SAMPLE}.csv"
+grep -i "VARA" /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/backup/${SAMPLE}.csv >> /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/grep_VARA/${SAMPLE}.grep_VARA.csv
 
 
 
@@ -73,6 +68,31 @@ wait
 
 #
 # Ending grep_VARA
+#
+
+
+#
+#
+
+# Starting grep_VARB
+#
+
+
+
+#
+# Variables 
+# Indir: /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/grep_VARA
+# Outdir: /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/grep_VARB
+#
+
+grep -i "VARB" /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/grep_VARA/${SAMPLE}.grep_VARA.csv >> /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/grep_VARB/${SAMPLE}.grep_VARA.grep_VARB.csv
+
+
+
+wait
+
+#
+# Ending grep_VARB
 #
 
 #

@@ -1427,7 +1427,7 @@ sub write_min_files {
 
     print $fh "#!/bin/bash\n\n";
 
-    my $cwd = cwd();
+    my $cwd = getcwd();
     foreach my $sample ( @{ $self->samples } ) {
         print $fh <<EOF;
 export SAMPLE=$sample && ./workflow.sh

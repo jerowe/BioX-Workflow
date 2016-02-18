@@ -2,7 +2,7 @@
 global:
     - indir: t/example/data/raw/test005
     - outdir: t/example/data/processed/test005
-    - file_rule: (.csv)$
+    - file_rule: (.*).csv
     - min: 1
 rules:
     - backup:
