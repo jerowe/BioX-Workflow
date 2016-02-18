@@ -1,6 +1,7 @@
 Revision history for BioX-Workflow
 
 {{$NEXT}}
+    - Added bugfix for wait: 0
 
 0.23  2016-01-21 12:12:41 GST
     - Stupid regexp were broken

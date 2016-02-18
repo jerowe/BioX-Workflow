@@ -2,7 +2,6 @@
 
 BioX::Workflow - A very opinionated template based workflow writer.
 
-
 # SYNOPSIS
 
 Most of the functionality can be accessed through the biox-workflow.pl script.
@@ -10,6 +9,10 @@ Most of the functionality can be accessed through the biox-workflow.pl script.
     biox-workflow.pl --workflow /path/to/workflow.yml
 
 This module was written with Bioinformatics workflows in mind, but should be extensible to any sort of workflow or pipeline.
+
+# Under Construction
+
+The documentation behind by several versions. Updates coming soon!
 
 # Philosophy
 
@@ -268,10 +271,13 @@ variables contained in your rules.
         - outdir: /home/user/example-workflow/gemini-wrapper
         - file_rule: (.vcf)$|(.vcf.gz)$
         - some_variable: {$self->indir}/file_to_keep_handy
+        - ext: txt
     rules:
         - backup:
             local:
                 - ext: "backup"
+            process: cp {$self->indir}/{$sample}.csv {$self->outdir}/{$sample}.{$self->ext}.csv
+        - rule2:
             process: cp {$self->indir}/{$sample}.csv {$self->outdir}/{$sample}.{$self->ext}.csv
 
 ## Rules
@@ -412,6 +418,10 @@ You shouldn't really need to look here unless you have some reason to do some se
 ## Attributes
 
 Moose attributes. Technically any of these can be changed, but may break everything.
+
+## comment\_char
+
+## coerce\_paths
 
 ## select\_rules
 
@@ -569,6 +579,10 @@ It uses Moose::Meta::Attribute::Native::Trait::Hash and supports all the methods
         delete_stash  => 'delete',
         stash_pairs   => 'kv',
 
+## \_classes
+
+Saves a snapshot of the entire namespace for the initial environment, and each rule.
+
 ## Subroutines
 
 Subroutines can also be overriden and/or extended in the usual Moose fashion.
@@ -576,6 +590,10 @@ Subroutines can also be overriden and/or extended in the usual Moose fashion.
 ### run
 
 Starting point.
+
+## save\_env
+
+At each rule save the env for debugging purposes.
 
 ### make\_outdir
 
