@@ -835,6 +835,7 @@ has 'global_attr' => (
                 { override_process => $self->override_process },
                 { rule_based => $self->rule_based },
                 { verbose => $self->verbose },
+                { create_outdir => $self->create_outdir },
             ]
         );
         return $n;
