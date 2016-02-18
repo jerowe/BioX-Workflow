@@ -31,11 +31,11 @@
 
 #
 # Variables 
-# Indir: /home/jillian/projects/perl/BioX-Workflow/t/example/data/raw/test005
-# Outdir: /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/backup
+# Indir: $Bin/example/data/raw/test005
+# Outdir: $Bin/example/data/processed/test005/backup
 #
 
-cp /home/jillian/projects/perl/BioX-Workflow/t/example/data/raw/test005/${SAMPLE}.csv /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/backup/${SAMPLE}.csv
+cp $Bin/example/data/raw/test005/${SAMPLE}.csv $Bin/example/data/processed/test005/backup/${SAMPLE}.csv
 
 
 wait
@@ -55,12 +55,12 @@ wait
 
 #
 # Variables 
-# Indir: /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/backup
-# Outdir: /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/grep_VARA
+# Indir: $Bin/example/data/processed/test005/backup
+# Outdir: $Bin/example/data/processed/test005/grep_VARA
 #
 
-echo "Working on /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/backup/${SAMPLE}.csv"
-grep -i "VARA" /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/backup/${SAMPLE}.csv >> /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/grep_VARA/${SAMPLE}.grep_VARA.csv
+echo "Working on $Bin/example/data/processed/test005/backup/${SAMPLE}.csv"
+grep -i "VARA" $Bin/example/data/processed/test005/backup/${SAMPLE}.csv >> $Bin/example/data/processed/test005/grep_VARA/${SAMPLE}.grep_VARA.csv
 
 
 
@@ -81,11 +81,11 @@ wait
 
 #
 # Variables 
-# Indir: /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/grep_VARA
-# Outdir: /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/grep_VARB
+# Indir: $Bin/example/data/processed/test005/grep_VARA
+# Outdir: $Bin/example/data/processed/test005/grep_VARB
 #
 
-grep -i "VARB" /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/grep_VARA/${SAMPLE}.grep_VARA.csv >> /home/jillian/projects/perl/BioX-Workflow/t/example/data/processed/test005/grep_VARB/${SAMPLE}.grep_VARA.grep_VARB.csv
+grep -i "VARB" $Bin/example/data/processed/test005/grep_VARA/${SAMPLE}.grep_VARA.csv >> $Bin/example/data/processed/test005/grep_VARB/${SAMPLE}.grep_VARA.grep_VARB.csv
 
 
 
