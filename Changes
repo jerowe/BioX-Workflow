@@ -1,6 +1,7 @@
 Revision history for BioX-Workflow
 
 {{$NEXT}}
+    - Added option to number rules 001,002,003, etc
 
 0.25  2016-02-18 14:20:03 GST
     - Made major changes and updates to documentation
