@@ -201,8 +201,6 @@ has 'min' => (
     default => 0,
 );
 
-<<<<<<< HEAD
-=======
 =head3 number_rules
 
     Instead of
@@ -234,7 +232,6 @@ has 'counter_rules' => (
     },
 );
 
->>>>>>> develop
 =head3 auto_name
 
 Auto_name - Create outdirectory based on rulename
@@ -1084,9 +1081,6 @@ sub process_rules {
 
     foreach my $p ( @{$process} ) {
         next unless $p;
-<<<<<<< HEAD
-=======
-
         if($self->number_rules){
             my @keys = keys %{$p};
             my $result = sprintf("%04d", $self->counter_rules);
@@ -1096,7 +1090,6 @@ sub process_rules {
             delete $p->{$keys[0]};
             $self->inc_counter_rules;
         }
->>>>>>> develop
         $self->local_rule($p);
         $self->dothings;
     }
