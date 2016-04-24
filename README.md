@@ -412,6 +412,10 @@ You shouldn't really need to look here unless you have some reason to do some se
 
 Moose attributes. Technically any of these can be changed, but may break everything.
 
+## select\_rules
+
+Select a subsection of rules
+
 ### resample
 
 Boolean value get new samples based on indir/file\_rule or no
@@ -454,6 +458,24 @@ Instead of
         /rule2
 
 This feature is not particularly well supported, and may break when mixed with other methods, particularly --resample
+
+### min
+
+Print the workflow as 2 files.
+
+    #run-workflow.sh
+    export SAMPLE=sampleN && ./run_things
+
+### number\_rules
+
+    Instead of
+    outdir/
+        rule1
+        rule2
+
+    outdir/
+        001-rule1
+        002-rule2
 
 ### auto\_name
 
