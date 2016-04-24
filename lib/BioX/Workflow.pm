@@ -575,6 +575,36 @@ has 'min' => (
     default => 0,
 );
 
+=head3 number_rules
+
+    Instead of
+    outdir/
+        rule1
+        rule2
+
+    outdir/
+        001-rule1
+        002-rule2
+
+=cut
+
+has 'number_rules' => (
+    is => 'rw',
+    isa => 'Bool',
+    default => 0,
+);
+
+has 'counter_rules' => (
+    traits  => ['Counter'],
+    is => 'rw',
+    isa => 'Num',
+    default => 1,
+    handles => {
+        inc_counter_rules   => 'inc',
+        dec_counter_rules   => 'dec',
+        reset_counter_rules => 'reset',
+    },
+);
 
 =head3 auto_name
 
@@ -1291,8 +1321,18 @@ sub process_rules {
 
     foreach my $p (@{$process}){
         next unless $p;
-            $self->local_rule($p);
-            $self->dothings;
+
+        if($self->number_rules){
+            my @keys = keys %{$p};
+            my $result = sprintf("%04d", $self->counter_rules);
+            my $newkey = $keys[0];
+            $newkey = $result.'-'.$newkey;
+            $p->{$newkey} = dclone($p->{$keys[0]});
+            delete $p->{$keys[0]};
+            $self->inc_counter_rules;
+        }
+        $self->local_rule($p);
+        $self->dothings;
     }
 }
 
