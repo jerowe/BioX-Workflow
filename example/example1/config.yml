@@ -2,9 +2,11 @@
 global:
     - indir: data/raw
     - outdir: data/processed
-    - file_rule: (.csv)$
+    - file_rule: (.*)csv$
 rules:
     - backup:
+        local:
+            - wait: 0
         process: cp {$self->indir}/{$sample}.csv {$self->outdir}/{$sample}.csv
     - grep_VARA:
         process: |

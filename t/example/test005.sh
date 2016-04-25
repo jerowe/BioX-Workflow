@@ -1,23 +1,24 @@
-#!/bin/bash
-
 #
-# Generated at: 2016-01-04T06:13:16
-# This file was generated with the following options
-#	--select_rules	backup
-#	--select_rules	grep_VARA
-#	--workflow	t/example/test004.yml
-#	--samples	sample2
-#	--samples	sample1
+# Samples: sample1, sample2, sample3, sample4, sample5
 #
-
 #
 # Starting Workflow
 #
 #
 # Global Variables:
-#	indir: t/example/data/raw/test004
-#	outdir: t/example/data/processed/test004
-#	file_rule: (.csv)$
+#	resample: 0
+#	wait: 1
+#	auto_input: 1
+#	coerce_paths: 1
+#	auto_name: 1
+#	indir: t/example/data/raw/test005
+#	outdir: t/example/data/processed/test005
+#	min: 1
+#	override_process: 0
+#	rule_based: 1
+#	verbose: 1
+#	create_outdir: 1
+#	file_rule: (.*).csv
 #
 
 #
@@ -30,13 +31,11 @@
 
 #
 # Variables 
-# Indir: t/example/data/raw/test004
-# Outdir: t/example/data/processed/test004/backup
+# Indir: $Bin/example/data/raw/test005
+# Outdir: $Bin/example/data/processed/test005/backup
 #
 
-cp t/example/data/raw/test004/sample1.csv t/example/data/processed/test004/backup/sample1.csv
-
-cp t/example/data/raw/test004/sample2.csv t/example/data/processed/test004/backup/sample2.csv
+cp $Bin/example/data/raw/test005/${SAMPLE}.csv $Bin/example/data/processed/test005/backup/${SAMPLE}.csv
 
 
 wait
@@ -56,16 +55,12 @@ wait
 
 #
 # Variables 
-# Indir: t/example/data/processed/test004/backup
-# Outdir: t/example/data/processed/test004/grep_VARA
+# Indir: $Bin/example/data/processed/test005/backup
+# Outdir: $Bin/example/data/processed/test005/grep_VARA
 #
 
-echo "Working on t/example/data/processed/test004/backup/sample1.csv"
-grep -i "VARA" t/example/data/processed/test004/backup/sample1.csv >> t/example/data/processed/test004/grep_VARA/sample1.grep_VARA.csv
-
-
-echo "Working on t/example/data/processed/test004/backup/sample2.csv"
-grep -i "VARA" t/example/data/processed/test004/backup/sample2.csv >> t/example/data/processed/test004/grep_VARA/sample2.grep_VARA.csv
+echo "Working on $Bin/example/data/processed/test005/backup/${SAMPLE}.csv"
+grep -i "VARA" $Bin/example/data/processed/test005/backup/${SAMPLE}.csv >> $Bin/example/data/processed/test005/grep_VARA/${SAMPLE}.grep_VARA.csv
 
 
 
@@ -73,6 +68,31 @@ wait
 
 #
 # Ending grep_VARA
+#
+
+
+#
+#
+
+# Starting grep_VARB
+#
+
+
+
+#
+# Variables 
+# Indir: $Bin/example/data/processed/test005/grep_VARA
+# Outdir: $Bin/example/data/processed/test005/grep_VARB
+#
+
+grep -i "VARB" $Bin/example/data/processed/test005/grep_VARA/${SAMPLE}.grep_VARA.csv >> $Bin/example/data/processed/test005/grep_VARB/${SAMPLE}.grep_VARA.grep_VARB.csv
+
+
+
+wait
+
+#
+# Ending grep_VARB
 #
 
 #

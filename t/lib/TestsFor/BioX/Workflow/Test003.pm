@@ -26,6 +26,7 @@ sub test_006 :Tags(output) {
     isa_ok($obj, 'BioX::Workflow');
 
     my $expected = slurp("$Bin/example/test003.sh");
+    $expected =~ s/\$Bin/$Bin/g;
 
     my $got = capture {
         $obj->init_things;
@@ -35,6 +36,12 @@ sub test_006 :Tags(output) {
 
         $obj->write_workflow_meta('end');
     };
+    #use Text::Diff;
+    #my $diff = diff \$got,   \$expected;
+
+    #diag("Diff is ".$diff);
+    #return;
+
     is($got, $expected, "Got expected output!" );
     ok(-d "$Bin/example/data/processed/test003");
 
