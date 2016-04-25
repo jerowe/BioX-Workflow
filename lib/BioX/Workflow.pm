@@ -594,6 +594,20 @@ has 'sample_based' => (
     default => 0,
 );
 
+=head3 save_object_env
+
+Save object env. This will save all the variables. Useful for debugging, but gets unweildly for larger workflows.
+
+=cut
+
+has 'save_object_env' => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 0,
+    predicate => 'has_save_object_env',
+    clearer   => 'clear_save_object_env',
+);
+
 =head2 stash
 
 This isn't ever used in the code. Its just there incase you want to do some things with override_process
@@ -739,6 +753,8 @@ At each rule save the env for debugging purposes.
 
 sub save_env {
     my $self = shift;
+
+    return unless $self->save_object_env;
 
     $DB::single = 2;
     $self->_classes->{ $self->key } = dclone($self);
@@ -1088,10 +1104,10 @@ sub process_rules {
             $newkey = $result.'-'.$newkey;
             $p->{$newkey} = dclone($p->{$keys[0]});
             delete $p->{$keys[0]};
-            $self->inc_counter_rules;
         }
         $self->local_rule($p);
         $self->dothings;
+        $self->inc_counter_rules;
     }
 }
 
@@ -1162,10 +1178,6 @@ Clear the process vars
 sub clear_process_vars {
     my $self = shift;
 
-    #Set bools back to false and reinitialize global vars
-    #$self->resample(0);
-    #$self->override_process(0);
-
     $self->attr->clear;
     $self->local_attr->clear;
 
@@ -1216,6 +1228,15 @@ sub init_process_vars {
     $self->add_attr('local_attr');
     $self->create_attr;
     $self->get_samples if $self->resample;
+
+    #Why did I have this in write rule meta?
+    if ( $self->auto_input ) {
+        $self->local_attr->set( 'OUTPUT' => $self->OUTPUT )
+            if $self->has_OUTPUT;
+        $self->local_attr->set(
+            'INPUT' => $self->global_attr->get_values('INPUT') )
+            if $self->global_attr->exists('INPUT');
+    }
 }
 
 =head2 add_attr
@@ -1255,6 +1276,15 @@ sub write_rule_meta {
     return unless $meta eq "before_meta";
     print "$self->{comment_char} Starting $self->{key}\n";
     print "$self->{comment_char}\n\n";
+
+    #if ( $self->auto_input ) {
+        #$self->local_attr->set( 'OUTPUT' => $self->OUTPUT )
+            #if $self->has_OUTPUT;
+        #$self->local_attr->set(
+            #'INPUT' => $self->global_attr->get_values('INPUT') )
+            #if $self->global_attr->exists('INPUT');
+    #}
+
     if ( $self->verbose ) {
         print "\n\n$self->{comment_char}\n";
         print "$self->{comment_char} Variables \n";
@@ -1264,14 +1294,6 @@ sub write_rule_meta {
         if ( exists $self->local_rule->{ $self->key }->{local} ) {
 
             print "$self->{comment_char} Local Variables:\n";
-
-            if ( $self->auto_input ) {
-                $self->local_attr->set( 'OUTPUT' => $self->OUTPUT )
-                    if $self->has_OUTPUT;
-                $self->local_attr->set(
-                    'INPUT' => $self->global_attr->get_values('INPUT') )
-                    if $self->global_attr->exists('INPUT');
-            }
 
             my @keys = $self->local_attr->get_keys();
 
