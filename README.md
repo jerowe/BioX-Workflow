@@ -180,6 +180,10 @@ Default Value. The outer loop is samples, not rules. Must be set in your global 
 
 If you ever have resample: 1 in your config you should NOT set this value to true!
 
+### save\_object\_env
+
+Save object env. This will save all the variables. Useful for debugging, but gets unweildly for larger workflows.
+
 ## stash
 
 This isn't ever used in the code. Its just there incase you want to do some things with override\_process
