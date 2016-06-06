@@ -1,6 +1,7 @@
 Revision history for BioX-Workflow
 
 {{$NEXT}}
+    - Added fix for when file supplied by --workflow doesn't exist
 
 1.0  2016-06-06 15:19:54 GST
     - Migrating to github

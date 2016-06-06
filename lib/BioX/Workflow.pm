@@ -26,6 +26,7 @@ use List::Uniq ':all';
 
 use Carp::Always;
 
+
 extends 'BioX::Wrapper';
 with 'MooseX::Getopt::Usage';
 with 'MooseX::Getopt::Usage::Role::Man';
@@ -33,6 +34,7 @@ with 'MooseX::SimpleConfig';
 
 with 'MooseX::Object::Pluggable';
 
+use MooseX::FileAttribute;
 # For pretty man pages!
 $ENV{TERM} = 'xterm-256color';
 
@@ -590,10 +592,11 @@ Path to workflow workflow. This must be a YAML file.
 
 =cut
 
-has 'workflow' => (
+has_file 'workflow' => (
     is       => 'rw',
-    isa      => 'Str',
     required => 1,
+    must_exist => 1,
+    documentation => q{Your configuration workflow file.},
 );
 
 =head3 rule_based

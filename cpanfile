@@ -31,6 +31,7 @@ requires 'List::Uniq';
 requires 'MooseX::Types::Path::Tiny';
 requires "MooseX::Object::Pluggable";
 
+requires 'MooseX::FileAttribute';
 requires 'Slurp';
 
 # requires 'Some::Module', 'VERSION';
