@@ -82,16 +82,16 @@
    "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
-         "web" : "https://bitbucket.org/jerowe/biox-workflow/issues"
+         "web" : "https://bitbucket.org/jerowe/BioX-Workflow/issues"
       },
-      "homepage" : "https://bitbucket.org/jerowe/biox-workflow",
+      "homepage" : "https://bitbucket.org/jerowe/BioX-Workflow",
       "repository" : {
          "type" : "git",
-         "url" : "git://git@bitbucket.org:jerowe/biox-workflow.git",
-         "web" : "https://bitbucket.org/jerowe/biox-workflow"
+         "url" : "git://git@bitbucket.org:jerowe/BioX-Workflow.git",
+         "web" : "https://bitbucket.org/jerowe/BioX-Workflow"
       }
    },
-   "version" : "0.27",
+   "version" : "1.0",
    "x_contributors" : [
       "Jillian Rowe <jir2004@qatar-med.cornell.edu>"
    ]

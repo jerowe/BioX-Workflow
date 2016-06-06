@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow
 
 {{$NEXT}}
+
+1.0  2016-06-06 15:19:54 GST
     - Migrating to github
     - Added fix for when using --select_rules that INPUT/OUTPUT are still looped
 

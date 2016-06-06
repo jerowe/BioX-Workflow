@@ -4,7 +4,6 @@ BioX::Workflow - A very opinionated template based workflow writer.
 
 # SYNOPSIS
 
-
 Most of the functionality can be accessed through the biox-workflow.pl script.
 
     biox-workflow.pl --workflow /path/to/workflow.yml
@@ -30,6 +29,10 @@ Moose attributes. Technically any of these can be changed, but may break everyth
 ## select\_rules
 
 Select a subsection of rules
+
+## match\_rules
+
+Select a subsection of rules by regexp
 
 ### resample
 
