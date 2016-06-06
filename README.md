@@ -4,6 +4,7 @@ BioX::Workflow - A very opinionated template based workflow writer.
 
 # SYNOPSIS
 
+
 Most of the functionality can be accessed through the biox-workflow.pl script.
 
     biox-workflow.pl --workflow /path/to/workflow.yml
