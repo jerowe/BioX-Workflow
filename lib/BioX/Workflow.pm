@@ -107,7 +107,35 @@ has 'select_rules' => (
         has_no_select_rules => 'is_empty',
         sorted_select_rules => 'sort',
     },
-    documentation => q{Select a subselection of rules to choose from},
+    documentation => q{Select a subselection of rules.},
+);
+
+=head2 match_rules
+
+Select a subsection of rules by regexp
+
+=cut
+
+has 'match_rules' => (
+    traits   => ['Array'],
+    is       => 'rw',
+    isa      => 'ArrayRef[Str]',
+    default  => sub { [] },
+    required => 0,
+    handles  => {
+        all_match_rules    => 'elements',
+        add_match_rule     => 'push',
+        map_match_rules    => 'map',
+        filter_match_rules => 'grep',
+        find_match_rule    => 'first',
+        get_match_rule     => 'get',
+        join_match_rules   => 'join',
+        count_match_rules  => 'count',
+        has_match_rules    => 'count',
+        has_no_match_rules => 'is_empty',
+        sorted_match_rules => 'sort',
+    },
+    documentation => q{Select a subselection of rules by regular expression},
 );
 
 =head3 resample
@@ -1118,9 +1146,23 @@ sub dothings {
 
     $self->init_process_vars;
 
+    $DB::single=2;
     if ( $self->has_select_rules ) {
         my $p = $self->key;
         if ( !$self->filter_select_rules( sub {/^$p$/} ) ) {
+            $self->OUTPUT_to_INPUT;
+            $self->clear_process_vars;
+
+            $self->pkey( $self->key );
+            $self->indir( $self->outdir . "/" . $self->pkey )
+                if $self->auto_name;
+            return;
+        }
+    }
+    elsif ( $self->has_match_rules ) {
+        my $p = $self->key;
+        if ( !$self->map_match_rules( sub {$p =~ m/$_/} ) ) {
+            $self->OUTPUT_to_INPUT;
             $self->clear_process_vars;
 
             $self->pkey( $self->key );
@@ -1276,14 +1318,6 @@ sub write_rule_meta {
     return unless $meta eq "before_meta";
     print "$self->{comment_char} Starting $self->{key}\n";
     print "$self->{comment_char}\n\n";
-
-    #if ( $self->auto_input ) {
-        #$self->local_attr->set( 'OUTPUT' => $self->OUTPUT )
-            #if $self->has_OUTPUT;
-        #$self->local_attr->set(
-            #'INPUT' => $self->global_attr->get_values('INPUT') )
-            #if $self->global_attr->exists('INPUT');
-    #}
 
     if ( $self->verbose ) {
         print "\n\n$self->{comment_char}\n";

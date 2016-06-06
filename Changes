@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow
 
 {{$NEXT}}
+    - Migrating to github
+    - Added fix for when using --select_rules that INPUT/OUTPUT are still looped
 
 0.27  2016-04-25 11:54:18 GST
     - Added fix for saving env only as a var
