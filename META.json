@@ -58,6 +58,7 @@
             "List::Compare" : "0",
             "List::Uniq" : "0",
             "Moose" : "0",
+            "MooseX::FileAttribute" : "0",
             "MooseX::Getopt" : "0",
             "MooseX::Getopt::Usage" : "0",
             "MooseX::Getopt::Usage::Role::Man" : "0",
@@ -82,16 +83,16 @@
    "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
-         "web" : "https://bitbucket.org/jerowe/BioX-Workflow/issues"
+         "web" : "https://github.com/jerowe/BioX-Workflow/issues"
       },
-      "homepage" : "https://bitbucket.org/jerowe/BioX-Workflow",
+      "homepage" : "https://github.com/jerowe/BioX-Workflow",
       "repository" : {
          "type" : "git",
-         "url" : "git://git@bitbucket.org:jerowe/BioX-Workflow.git",
-         "web" : "https://bitbucket.org/jerowe/BioX-Workflow"
+         "url" : "https://github.com/jerowe/BioX-Workflow.git",
+         "web" : "https://github.com/jerowe/BioX-Workflow"
       }
    },
-   "version" : "1.0",
+   "version" : "1.0.1",
    "x_contributors" : [
       "Jillian Rowe <jir2004@qatar-med.cornell.edu>"
    ]
