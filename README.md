@@ -297,7 +297,7 @@ BioX::Workflow - A very opinionated template based workflow writer.
 
 # AUTHOR
 
-Jillian Rowe &lt;jillian.e.rowe@gmail.com>
+Jillian Rowe <jillian.e.rowe@gmail.com>
 
 # Acknowledgements
 
