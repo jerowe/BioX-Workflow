@@ -669,6 +669,18 @@ has 'stash' => (
     },
 );
 
+=head2 plugins
+
+Load plugins as an opt
+
+=cut
+
+has 'plugins' => (
+    is => 'rw',
+    isa => 'ArrayRef',
+    default => sub {[]},
+);
+
 =head2 _classes
 
 Saves a snapshot of the entire namespace for the initial environment, and each rule.
@@ -912,18 +924,25 @@ sub match_samples {
 
 =head3 plugin_load
 
-Load plugins defined in yaml with MooseX::Object::Pluggable
+Load plugins defined in yaml or on command line with --plugins with MooseX::Object::Pluggable
 
 =cut
 
 sub plugin_load {
     my ($self) = shift;
 
-    return unless $self->yaml->{plugins};
+    my $plugins = [];
+    if($self->yaml->{plugins}){
+        $plugins = $self->yaml->{plugins};
+    }
+    elsif($self->plugins){
+        $plugins = $self->plugins;
+    }
+    else{
+        return;
+    }
 
-    my $modules = $self->yaml->{plugins};
-
-    foreach my $m (@$modules) {
+    foreach my $m (@$plugins) {
         $self->load_plugin($m);
     }
 }
