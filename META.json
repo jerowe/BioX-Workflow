@@ -42,7 +42,6 @@
       },
       "runtime" : {
          "requires" : {
-            "BioX::Workflow::Drake" : "0",
             "BioX::Wrapper" : "0",
             "Carp::Always" : "0",
             "Class::Load" : "0",

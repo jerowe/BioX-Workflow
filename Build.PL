@@ -23,7 +23,6 @@ my %module_build_args = (
   "module_name" => "BioX::Workflow",
   "recursive_test_files" => 1,
   "requires" => {
-    "BioX::Workflow::Drake" => 0,
     "BioX::Wrapper" => 0,
     "Carp::Always" => 0,
     "Class::Load" => 0,
@@ -55,7 +54,6 @@ my %module_build_args = (
     "perl" => "5.008005"
   },
   "script_files" => [
-    "script/biox-workflow-drake.pl",
     "script/biox-workflow.pl"
   ],
   "test_requires" => {
