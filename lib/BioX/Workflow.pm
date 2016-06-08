@@ -24,7 +24,7 @@ use Storable qw(dclone);
 use MooseX::Types::Path::Tiny qw/Path Paths AbsPath/;
 use List::Uniq ':all';
 
-use Carp::Always;
+#use Carp::Always;
 
 
 extends 'BioX::Wrapper';

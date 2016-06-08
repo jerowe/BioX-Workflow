@@ -1,4 +1,7 @@
 requires 'perl', '5.008005';
+
+requires 'BioX::Wrapper';
+
 requires 'Cwd';
 requires 'Data::Dumper';
 requires 'DateTime';
@@ -11,9 +14,11 @@ requires 'Moose';
 requires 'MooseX::Getopt';
 requires 'MooseX::Getopt::Usage';
 requires 'MooseX::SimpleConfig';
-requires 'BioX::Wrapper';
 requires 'MooseX::Getopt::Usage';
 requires 'MooseX::Getopt::Usage::Role::Man';
+requires 'MooseX::FileAttribute';
+requires 'MooseX::Types::Path::Tiny';
+requires "MooseX::Object::Pluggable";
 
 requires 'YAML::XS';
 requires 'String::CamelCase';
@@ -22,16 +27,12 @@ requires 'IO::File';
 requires 'Interpolation';
 requires 'Text::Template';
 requires 'Data::Pairs';
-
 requires 'List::Compare';
 requires 'Carp::Always';
 requires 'Storable';
 requires 'Config::Any';
 requires 'List::Uniq';
-requires 'MooseX::Types::Path::Tiny';
-requires "MooseX::Object::Pluggable";
 
-requires 'MooseX::FileAttribute';
 requires 'Slurp';
 
 # requires 'Some::Module', 'VERSION';

@@ -18,11 +18,12 @@ my %module_build_args = (
     "Jillian Rowe <jillian.e.rowe\@gmail.com>"
   ],
   "dist_name" => "BioX-Workflow",
-  "dist_version" => "1.0.1",
+  "dist_version" => "1.0",
   "license" => "perl",
   "module_name" => "BioX::Workflow",
   "recursive_test_files" => 1,
   "requires" => {
+    "BioX::Workflow::Drake" => 0,
     "BioX::Wrapper" => 0,
     "Carp::Always" => 0,
     "Class::Load" => 0,
@@ -58,16 +59,30 @@ my %module_build_args = (
     "script/biox-workflow.pl"
   ],
   "test_requires" => {
+    "Capture::Tiny" => 0,
+    "FindBin" => 0,
+    "IPC::Cmd" => 0,
+    "Slurp" => 0,
     "Test::Class::Moose" => 0,
-    "Test::More" => 0
+    "Test::Class::Moose::Load" => 0,
+    "Test::Class::Moose::Runner" => 0,
+    "Test::More" => 0,
+    "strict" => 0
   }
 );
 
 
 my %fallback_build_requires = (
+  "Capture::Tiny" => 0,
+  "FindBin" => 0,
+  "IPC::Cmd" => 0,
   "Module::Build" => "0.28",
+  "Slurp" => 0,
   "Test::Class::Moose" => 0,
-  "Test::More" => 0
+  "Test::Class::Moose::Load" => 0,
+  "Test::Class::Moose::Runner" => 0,
+  "Test::More" => 0,
+  "strict" => 0
 );
 
 
