@@ -2,7 +2,7 @@
 global:
     - indir: data/raw
     - outdir: data/processed
-    - file_rule: (.*)csv$
+    - file_rule: (.*).csv$
 rules:
     - backup:
         local:

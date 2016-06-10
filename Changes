@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow
 
 {{$NEXT}}
+    - Added documentation for select_rules and match_rules
+    - Refactored code into Moose roles
     - Added getopt option for plugins
 
 1.0.1  2016-06-08 10:33:36 GST

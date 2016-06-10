@@ -6,7 +6,7 @@ BioX::Workflow::Usage
 
     biox-workflow.pl --workflow /path/to/workflow.yml
 
-
+=encoding utf8
 
 =head1 Introduction
 
@@ -15,9 +15,22 @@ processing those samples in one or more steps. Also, most bioinformatics
 workflows are bash based, and no one wants to reinvent the wheel to rewrite
 their code in perl/python/whatever.
 
-Once you have your configuration all set, run
+Once you have your configuration all set, to process your entire workflow run
 
- biox-workflow.pl --workflow workflow.yml > workflow.sh
+    biox-workflow.pl --workflow workflow.yml > workflow.sh
+
+Alternately, to select an exact rule
+
+    biox-workflow.pl --workflow workflow.yml --select_rules bowtie2 > rule1.sh
+
+To match a set of rules using a regexp
+
+    #Matches all rules that contain 'gatk', including 'gatk_realign_indels', or 'rule_gatk'
+    biox-workflow.pl --workflow workflow.yml --match_rules gatk > gatk.sh
+
+    #Match only those rules beginning with gatk
+    biox-workflow.pl --workflow workflow.yml --match_rules "^gatk" > gatk.sh
+
 
 =head1 InDepth
 
@@ -119,7 +132,7 @@ This time the sample names come from a directory, with stuff inside.
          - find_by_dir: 1
          - by_sample_outdir: 1
 
-
+=encoding utf8
 
 
 =head1 Workflow
@@ -182,7 +195,7 @@ template. Make sure to use the previously defined $OUT. For more information see
 
 
 
-
+=encoding utf8
 
 
 =head1 Customizing your output and special variables
@@ -217,7 +230,7 @@ for more details.
                  - INPUT: {$self->indir}/{$sample}.in
                  - OUTPUT: {$self->outdir}/{$sample}.out
 
-
+=encoding utf8
 
 
 =head1 Example001
@@ -270,7 +283,7 @@ Run the script to create out directory structure and workflow bash script
             /rule2
             /rule3
 
-
+=encoding utf8
 
 
 =head1 Example002
@@ -406,7 +419,7 @@ For instance, if running this as
 
 The "cp blahblahblah" commands would run in parallel, and the next rule would not begin until those processes have finished.
 
-
+=encoding utf8
 
 
 =head1 Example003
@@ -507,3 +520,20 @@ Assuming you saved your output to workflow.sh if you run ./workflow.sh you will 
                  /grep_varb
                      test2.grep_VARA.grep_VARB.csv
 
+
+=head1 Acknowledgements
+
+Before version 0.03
+
+This module was originally developed at and for Weill Cornell Medical
+College in Qatar within ITS Advanced Computing Team. With approval from
+WCMC-Q, this information was generalized and put on github, for which
+the authors would like to express their gratitude.
+
+As of version 0.03:
+
+This modules continuing development is supported by NYU Abu Dhabi in the Center for Genomics and Systems Biology.
+With approval from NYUAD, this information was generalized and put on github, for which
+the authors would like to express their gratitude.
+
+=cut

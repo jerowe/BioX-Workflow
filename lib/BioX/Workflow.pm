@@ -4,8 +4,7 @@ use 5.008_005;
 our $VERSION = '1.0.1';
 
 use Moose;
-use File::Find::Rule;
-use File::Basename;
+
 use File::Path qw(make_path remove_tree);
 use Cwd qw(abs_path getcwd);
 use Data::Dumper;
@@ -13,7 +12,6 @@ use List::Compare;
 use YAML::XS 'LoadFile';
 use Config::Any;
 
-#use String::CamelCase qw(camelize decamelize wordsplit);
 use Data::Dumper;
 use Class::Load ':all';
 use IO::File;
@@ -22,20 +20,25 @@ use Text::Template qw(fill_in_file fill_in_string);
 use Data::Pairs;
 use Storable qw(dclone);
 use MooseX::Types::Path::Tiny qw/Path Paths AbsPath/;
-use List::Uniq ':all';
-
-#use Carp::Always;
-
 
 extends 'BioX::Wrapper';
+
+with 'BioX::Workflow::Samples';
+with 'BioX::Workflow::Debug';
+with 'BioX::Workflow::SpecialVars';
+with 'BioX::Workflow::StructureOutput';
+with 'BioX::Workflow::WriteMeta';
+with 'BioX::Workflow::Rules';
+
 with 'MooseX::Getopt::Usage';
 with 'MooseX::Getopt::Usage::Role::Man';
 with 'MooseX::SimpleConfig';
-
 with 'MooseX::Object::Pluggable';
 
 use MooseX::FileAttribute;
+
 # For pretty man pages!
+
 $ENV{TERM} = 'xterm-256color';
 
 =encoding utf-7
@@ -64,7 +67,9 @@ You shouldn't really need to look here unless you have some reason to do some se
 
 Moose attributes. Technically any of these can be changed, but may break everything.
 
-=head2 comment_char
+=head3 comment_char
+
+This should really be in BioX::Wrapper
 
 =cut
 
@@ -73,379 +78,88 @@ has '+comment_char' => (
     clearer   => 'clear_comment_char',
 );
 
-=head2 coerce_paths
+
+=head3 workflow
+
+Path to workflow workflow. This must be a YAML file.
 
 =cut
 
-has 'coerce_paths' => (
-    is        => 'rw',
-    isa       => 'Bool',
-    default   => 1,
-    predicate => 'has_coerce_paths',
-);
-
-=head2 select_rules
-
-Select a subsection of rules
-
-=cut
-
-has 'select_rules' => (
-    traits   => ['Array'],
+has_file 'workflow' => (
     is       => 'rw',
-    isa      => 'ArrayRef[Str]',
-    default  => sub { [] },
-    required => 0,
-    handles  => {
-        all_select_rules    => 'elements',
-        add_select_rule     => 'push',
-        map_select_rules    => 'map',
-        filter_select_rules => 'grep',
-        find_select_rule    => 'first',
-        get_select_rule     => 'get',
-        join_select_rules   => 'join',
-        count_select_rules  => 'count',
-        has_select_rules    => 'count',
-        has_no_select_rules => 'is_empty',
-        sorted_select_rules => 'sort',
-    },
-    documentation => q{Select a subselection of rules.},
+    required => 1,
+    must_exist => 1,
+    documentation => q{Your configuration workflow file.},
 );
 
-=head2 match_rules
+=head3 rule_based
 
-Select a subsection of rules by regexp
+This is the default. The outer loop are the rules, not the samples
 
 =cut
 
-has 'match_rules' => (
-    traits   => ['Array'],
-    is       => 'rw',
-    isa      => 'ArrayRef[Str]',
-    default  => sub { [] },
-    required => 0,
-    handles  => {
-        all_match_rules    => 'elements',
-        add_match_rule     => 'push',
-        map_match_rules    => 'map',
-        filter_match_rules => 'grep',
-        find_match_rule    => 'first',
-        get_match_rule     => 'get',
-        join_match_rules   => 'join',
-        count_match_rules  => 'count',
-        has_match_rules    => 'count',
-        has_no_match_rules => 'is_empty',
-        sorted_match_rules => 'sort',
-    },
-    documentation => q{Select a subselection of rules by regular expression},
+has 'rule_based' => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 1,
 );
 
-=head3 resample
+=head3 sample_based
 
-Boolean value get new samples based on indir/file_rule or no
+Default Value. The outer loop is samples, not rules. Must be set in your global values or on the command line --sample_based 1
 
-Samples are found at the beginning of the workflow, based on the global indir variable and the file_find.
-
-Chances are you don't want to set resample to try, because these files probably won't exist outside of the indirectory until the pipeline is run.
-
-One example of doing so, shown in the gemini.yml in the examples directory, is looking for uncompressed files, .vcf extension, compressing them, and
-then resampling based on the .vcf.gz extension.
+If you ever have resample: 1 in your config you should NOT set this value to true!
 
 =cut
 
-has 'resample' => (
-    traits    => ['NoGetopt'],
-    is        => 'rw',
-    isa       => 'Bool',
-    default   => 0,
-    predicate => 'has_resample',
-    clearer   => 'clear_resample',
-);
-
-=head2 find_by_dir
-
-Use this option when you sample names are by directory
-The default is to find samples by filename
-
-    /SAMPLE1
-        SAMPLE1_r1.fastq.gz
-        SAMPLE1_r2.fastq.gz
-    /SAMPLE2
-        SAMPLE2_r1.fastq.gz
-        SAMPLE2_r2.fastq.gz
-
-=cut
-
-has 'find_by_dir' => (
-    is            => 'rw',
-    isa           => 'Bool',
-    default       => 0,
-    documentation => q{Use this option when you sample names are directories},
-    predicate     => 'has_find_by_dir',
-    clearer       => 'clear_find_by_dir',
-);
-
-=head2 by_sample_outdir
-
-    outdir/
-    /outdir/SAMPLE1
-        /rule1
-        /rule2
-        /rule3
-    /outdir/SAMPLE2
-        /rule1
-        /rule2
-        /rule3
-
-Instead of
-
-    /outdir
-        /rule1
-        /rule2
-
-This feature is not particularly well supported, and may break when mixed with other methods, particularly --resample
-
-=cut
-
-has 'by_sample_outdir' => (
-    is            => 'rw',
-    isa           => 'Bool',
-    default       => 0,
-    documentation => q{When you want your output by sample},
-    clearer       => 'clear_by_sample_outdir',
-    predicate     => 'has_by_sample_outdir',
-);
-
-=head3 min
-
-Print the workflow as 2 files.
-
-    #run-workflow.sh
-    export SAMPLE=sampleN && ./run_things
-
-=cut
-
-has 'min' => (
+has 'sample_based' => (
     is      => 'rw',
     isa     => 'Bool',
     default => 0,
 );
 
-=head3 number_rules
+=head2 stash
 
-    Instead of
-    outdir/
-        rule1
-        rule2
+This isn't ever used in the code. Its just there incase you want to persist objects across rules
 
-    outdir/
-        001-rule1
-        002-rule2
+It uses Moose::Meta::Attribute::Native::Trait::Hash and supports all the methods.
 
-=cut
-
-has 'number_rules' => (
-    is => 'rw',
-    isa => 'Bool',
-    default => 0,
-);
-
-has 'counter_rules' => (
-    traits  => ['Counter'],
-    is => 'rw',
-    isa => 'Num',
-    default => 1,
-    handles => {
-        inc_counter_rules   => 'inc',
-        dec_counter_rules   => 'dec',
-        reset_counter_rules => 'reset',
-    },
-);
-
-=head3 auto_name
-
-Auto_name - Create outdirectory based on rulename
-
-global:
-    - outdir: /home/user/workflow/processed
-rule:
-    normalize:
-        process:
-            dostuff {$self->indir}/{$sample}.in >> {$self->outdir}/$sample.out
-
-Would create your directory structure /home/user/workflow/processed/normalize (if it doesn't exist)
+        set_stash     => 'set',
+        get_stash     => 'get',
+        has_no_stash => 'is_empty',
+        num_stashs    => 'count',
+        delete_stash  => 'delete',
+        stash_pairs   => 'kv',
 
 =cut
 
-has 'auto_name' => (
-    traits  => ['Bool'],
+has 'stash' => (
     is      => 'rw',
-    isa     => 'Bool',
-    default => 1,
-
-    #clearer => 'clear_auto_name',
-    predicate => 'has_auto_name',
-    handles   => {
-        enforce_struct       => 'set',
-        clear_enforce_struct => 'unset',
-        clear_auto_name      => 'unset',
-    },
-);
-
-=head3 auto_input
-
-This is similar to the auto_name function in the BioX::Workflow.
-Instead this says each input should be the previous output.
-
-=cut
-
-has 'auto_input' => (
-    is        => 'rw',
-    isa       => 'Bool',
-    default   => 1,
-    clearer   => 'clear_auto_input',
-    predicate => 'has_auto_input',
-);
-
-# Getting rid of this - its the same as auto_name
-# Put it in auto_name for compatibility
-
-#has 'enforce_struct' => (
-#is => 'rw',
-#isa => 'Bool',
-#default => 1,
-#clearer => 'clear_enforce_struct',
-#predicate => 'has_enforce_struct',
-#);
-
-=head3 verbose
-
-Output some more things
-
-=cut
-
-has 'verbose' => (
-    is        => 'rw',
-    isa       => 'Bool',
-    default   => 1,
-    clearer   => 'clear_verbose',
-    predicate => 'has_verbose',
-);
-
-=head3 wait
-
-Print "wait" at the end of each rule
-
-=cut
-
-has 'wait' => (
-    is      => 'rw',
-    isa     => 'Bool',
-    default => 1,
-    documentation =>
-        q(Print 'wait' at the end of each rule. If you are running as a plain bash script you probably don't need this.),
-    clearer   => 'clear_wait',
-    predicate => 'has_wait',
-);
-
-=head3 override_process
-
-local:
-    - override_process: 1
-
-=cut
-
-has 'override_process' => (
-    traits    => ['Bool'],
-    is        => 'rw',
-    isa       => 'Bool',
-    default   => 0,
-    predicate => 'has_override_process',
-    documentation =>
-        q(Instead of for my $sample (@sample){ DO STUFF } just DOSTUFF),
+    isa     => 'HashRef',
+    traits  => ['Hash'],
+    default => sub { {} },
     handles => {
-        set_override_process   => 'set',
-        clear_override_process => 'unset',
+        set_stash    => 'set',
+        get_stash    => 'get',
+        has_no_stash => 'is_empty',
+        num_stashs   => 'count',
+        delete_stash => 'delete',
+        stash_pairs  => 'kv',
     },
 );
 
-=head3 indir outdir
+=head2 plugins
+
+Load plugins as an opt
 
 =cut
 
-has 'indir' => (
-    is            => 'rw',
-    isa           => AbsPath,
-    coerce        => 1,
-    default       => sub { getcwd(); },
-    predicate     => 'has_indir',
-    clearer       => 'clear_indir',
-    documentation => q(Directory to look for samples),
+has 'plugins' => (
+    is => 'rw',
+    isa => 'ArrayRef',
+    default => sub {[]},
 );
 
-has 'outdir' => (
-    is            => 'rw',
-    isa           => AbsPath,
-    coerce        => 1,
-    default       => sub { getcwd(); },
-    predicate     => 'has_outdir',
-    clearer       => 'clear_outdir',
-    documentation => q(Output directories for rules and processes),
-);
-
-=head3 create_outdir
-
-=cut
-
-has 'create_outdir' => (
-    is        => 'rw',
-    isa       => 'Bool',
-    predicate => 'has_create_outdir',
-    clearer   => 'clear_create_outdir',
-    documentation =>
-        q(Create the outdir. You may want to turn this off if doing a rule that doesn't write anything, such as checking if files exist),
-    default => 1,
-);
-
-=head3 INPUT OUTPUT
-
-Special variables that can have input/output
-
-These variables are also used in L<BioX::Workflow::Plugin::Drake>
-
-=cut
-
-has 'OUTPUT' => (
-    is        => 'rw',
-    isa       => 'Str|Undef',
-    predicate => 'has_OUTPUT',
-    clearer   => 'clear_OUTPUT',
-    documentation =>
-        q(Maybe clean up your code some. At the end of each process the OUTPUT becomes
-    the INPUT. Best when putting a single file through a stream of processes.)
-);
-
-has 'INPUT' => (
-    is            => 'rw',
-    isa           => 'Str|Undef',
-    predicate     => 'has_INPUT',
-    clearer       => 'clear_INPUT',
-    documentation => q(See $OUTPUT)
-);
-
-=head3 file_rule
-
-Rule to find files
-
-=cut
-
-has 'file_rule' => (
-    is        => 'rw',
-    isa       => 'Str',
-    default   => sub { return "(.*)"; },
-    clearer   => 'clear_file_rule',
-    predicate => 'has_file_rule',
-);
 
 =head3 No GetOpt Here
 
@@ -523,48 +237,12 @@ has 'local_rule' => (
     isa    => 'HashRef'
 );
 
-=head3 infiles
-
-Infiles to be processed
-
-=cut
-
-has 'infiles' => (
-    traits => ['NoGetopt'],
-    is     => 'rw',
-    isa    => 'ArrayRef',
-);
-
-=head3 samples
-
-=cut
-
-has 'samples' => (
-    traits   => ['Array'],
-    is       => 'rw',
-    isa      => 'ArrayRef',
-    default  => sub { [] },
-    required => 0,
-    handles  => {
-        all_samples    => 'elements',
-        add_sample     => 'push',
-        map_samples    => 'map',
-        filter_samples => 'grep',
-        find_sample    => 'first',
-        get_sample     => 'get',
-        join_samples   => 'join',
-        count_samples  => 'count',
-        has_samples    => 'count',
-        has_no_samples => 'is_empty',
-        sorted_samples => 'sort',
-    },
-    documentation =>
-        q{Supply samples on the command line as --samples sample1 --samples sample2, or find through file_rule.}
-);
 
 =head3 process
 
-Do stuff
+Our bash string
+
+    bowtie2 -p 12 -I {$sample}.fastq -O {$sample}.bam
 
 =cut
 
@@ -576,7 +254,7 @@ has 'process' => (
 
 =head3 key
 
-Do stuff
+Name of the rule
 
 =cut
 
@@ -586,116 +264,19 @@ has 'key' => (
     isa    => 'Str',
 );
 
-=head3 workflow
+=head3 pkey
 
-Path to workflow workflow. This must be a YAML file.
-
-=cut
-
-has_file 'workflow' => (
-    is       => 'rw',
-    required => 1,
-    must_exist => 1,
-    documentation => q{Your configuration workflow file.},
-);
-
-=head3 rule_based
-
-This is the default. The outer loop are the rules, not the samples
+Name of the previous rule
 
 =cut
 
-has 'rule_based' => (
-    is      => 'rw',
-    isa     => 'Bool',
-    default => 1,
-);
-
-=head3 sample_based
-
-Default Value. The outer loop is samples, not rules. Must be set in your global values or on the command line --sample_based 1
-
-If you ever have resample: 1 in your config you should NOT set this value to true!
-
-=cut
-
-has 'sample_based' => (
-    is      => 'rw',
-    isa     => 'Bool',
-    default => 0,
-);
-
-=head3 save_object_env
-
-Save object env. This will save all the variables. Useful for debugging, but gets unweildly for larger workflows.
-
-=cut
-
-has 'save_object_env' => (
-    is      => 'rw',
-    isa     => 'Bool',
-    default => 0,
-    predicate => 'has_save_object_env',
-    clearer   => 'clear_save_object_env',
-);
-
-=head2 stash
-
-This isn't ever used in the code. Its just there incase you want to do some things with override_process
-
-It uses Moose::Meta::Attribute::Native::Trait::Hash and supports all the methods.
-
-        set_stash     => 'set',
-        get_stash     => 'get',
-        has_no_stash => 'is_empty',
-        num_stashs    => 'count',
-        delete_stash  => 'delete',
-        stash_pairs   => 'kv',
-
-=cut
-
-has 'stash' => (
-    is      => 'rw',
-    isa     => 'HashRef',
-    traits  => ['Hash'],
-    default => sub { {} },
-    handles => {
-        set_stash    => 'set',
-        get_stash    => 'get',
-        has_no_stash => 'is_empty',
-        num_stashs   => 'count',
-        delete_stash => 'delete',
-        stash_pairs  => 'kv',
-    },
-);
-
-=head2 plugins
-
-Load plugins as an opt
-
-=cut
-
-has 'plugins' => (
-    is => 'rw',
-    isa => 'ArrayRef',
-    default => sub {[]},
-);
-
-=head2 _classes
-
-Saves a snapshot of the entire namespace for the initial environment, and each rule.
-
-=cut
-
-has '_classes' => (
-    traits    => ['NoGetopt'],
+has 'pkey' => (
+    traits => ['NoGetopt'],
     is        => 'rw',
-    isa       => 'HashRef',
-    default   => sub { return {} },
-    required  => 0,
-    predicate => 'has_classes',
-    clearer   => 'clear_classes',
+    isa       => 'Str|Undef',
+    predicate => 'has_pkey'
 );
+
 
 =head2 Subroutines
 
@@ -723,87 +304,39 @@ sub run {
     $self->write_workflow_meta('end');
 }
 
-sub write_workflow_meta {
-    my $self = shift;
-    my $type = shift;
 
-    return unless $self->verbose;
+=head3 init_things
 
-    if ( $type eq "start" ) {
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char} Starting Workflow\n";
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char} Global Variables:\n";
+Load the workflow, additional classes, and plugins
 
-        my @keys = $self->global_attr->get_keys();
+Initialize the global_attr, make the global outdir, and find samples
 
-        foreach my $k (@keys) {
-            next unless $k;
-            my ($v) = $self->global_attr->get_values($k);
-            print "$self->{comment_char}\t$k: " . $v . "\n";
-        }
-        print "$self->{comment_char}\n";
-    }
-    elsif ( $type eq "end" ) {
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char} Ending Workflow\n";
-        print "$self->{comment_char}\n";
-    }
-}
+=cut
 
 sub init_things {
     my $self = shift;
 
     $self->key('global');
-    $self->workflow_load;
 
+    $self->workflow_load;
     $self->class_load;
     $self->plugin_load;
 
     #Darn you data pairs and your shallow copies!
-    $self->set_global_yaml;
-    $self->attr( dclone( $self->global_attr ) );
-
-    $self->create_attr;
-    $self->eval_attr;
+    $self->init_global_attr;
 
     $self->make_outdir;
     $self->get_samples;
 
-    #Save our initial environment
     $self->save_env;
 }
 
-sub set_global_yaml {
-    my $self = shift;
 
-    return unless exists $self->yaml->{global};
+=head2 workflow_load
 
-    my $aref = $self->yaml->{global};
-    for my $a (@$aref){
-        while (my ($key, $value) = each(%{$a})) {
-            $self->global_attr->set($key => $value);
-        }
-    }
-}
-
-=head2 save_env
-
-At each rule save the env for debugging purposes.
+use Config::Any to load configuration files - yaml, json, etc
 
 =cut
-
-sub save_env {
-    my $self = shift;
-
-    return unless $self->save_object_env;
-
-    $DB::single = 2;
-    $self->_classes->{ $self->key } = dclone($self);
-    return;
-    $DB::single = 2;
-}
 
 sub workflow_load {
     my $self = shift;
@@ -815,111 +348,6 @@ sub workflow_load {
         my ( $filename, $config ) = %$_;
         $self->yaml($config);
     }
-}
-
-=head3 make_outdir
-
-Set initial indir and outdir
-
-=cut
-
-sub make_outdir {
-    my ($self) = @_;
-
-    return unless $self->create_outdir;
-
-    if ( $self->{outdir} =~ m/\{\$/ ) {
-        return;
-    }
-    make_path( $self->outdir ) if !-d $self->outdir;
-}
-
-=head3 get_samples
-
-Get basename of the files. Can add optional rules.
-
-sample.vcf.gz and sample.vcf would be sample if the file_rule is (.vcf)$|(.vcf.gz)$
-
-Also gets the full path to infiles
-
-Instead of doing
-
-    foreach my $sample (@$self->samples){
-        dostuff
-    }
-
-Could have
-
-    foreach my $infile (@$self->infiles){
-        dostuff
-    }
-
-=cut
-
-sub get_samples {
-    my ($self) = shift;
-    my ( @whole, @basename, $text );
-
-    if ( $self->has_samples && !$self->resample ) {
-        my (@samples) = $self->sorted_samples;
-        $self->samples( \@samples );
-        return;
-    }
-
-    $text = $self->file_rule;
-
-    if ( $self->find_by_dir ) {
-        @whole = find(
-            directory => name => qr/$text/,
-            maxdepth  => 1,
-            in        => $self->indir
-        );
-
-        #File find puts directory we are looking in, not just subdirs
-        @basename = grep { $_ != basename( $self->{indir} ) } @basename;
-        @basename = map  { basename($_) } @whole;
-        @basename = sort(@basename);
-    }
-    else {
-        @whole = find(
-            file     => name => qr/$text/,
-            maxdepth => 1,
-            in       => $self->indir
-        );
-
-#AAAH DOESN"T WORK
-#@basename = map {  my @tmp = fileparse($_); my($m) = $tmp[0] =~ qr/$text/; $m }  @whole ;
-        @basename = map { $self->match_samples( $_, $text ) } @whole;
-        @basename = uniq(@basename);
-        @basename = sort(@basename);
-    }
-
-    $self->samples( \@basename );
-    $self->infiles( \@whole );
-
-    if ( $self->verbose ) {
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char} Samples: ",
-            join( ", ", @{ $self->samples } ) . "\n";
-        print "$self->{comment_char}\n";
-    }
-}
-
-=head2 match_samples
-
-Match samples based on regex written in file_rule
-
-=cut
-
-sub match_samples {
-    my $self = shift;
-    my $file = shift;
-    my $text = shift;
-
-    my @tmp = fileparse($_);
-    my ($m) = $tmp[0] =~ qr/$text/;
-
-    return $m;
 }
 
 =head3 plugin_load
@@ -982,9 +410,33 @@ sub make_template {
     return $template;
 }
 
+=head2 init_global_attr
+
+Add our global key from config file to the global_attr, and then to attr
+
+Deprecated: set_global_yaml
+
+=cut
+
+sub init_global_attr {
+    my $self = shift;
+
+    return unless exists $self->yaml->{global};
+
+    my $aref = $self->yaml->{global};
+    for my $a (@$aref){
+        while (my ($key, $value) = each(%{$a})) {
+            $self->global_attr->set($key => $value);
+        }
+    }
+
+    $self->attr( dclone( $self->global_attr ) );
+    $self->create_attr;
+}
+
 =head3 create_attr
 
-make attributes
+Add attributes to $self-> namespace
 
 =cut
 
@@ -1048,6 +500,14 @@ sub create_attr {
     $meta->make_immutable;
 }
 
+=head3 eval_attr
+
+Evaluate the keys for variables using Text::Template
+{$sample} -> SampleA
+{$self->indir} -> data/raw (or the indir of the rule)
+
+=cut
+
 sub eval_attr {
     my $self   = shift;
     my $sample = shift;
@@ -1072,9 +532,15 @@ sub eval_attr {
         $self->$k($text);
     }
 
-    #$self->make_outdir if $self->attr->exists('OUTPUT');
+
     $self->make_outdir if $self->create_outdir;
 }
+
+=head2
+
+After each rule is processe clear the $self->attr
+
+=cut
 
 sub clear_attr {
     my $self = shift;
@@ -1099,7 +565,6 @@ sub write_pipeline {
         $self->process_rules;
     }
     elsif ( $self->sample_based ) {
-
         #Store the samples
         my $sample_store = $self->samples;
         foreach my $sample (@$sample_store) {
@@ -1115,27 +580,6 @@ sub write_pipeline {
     }
 }
 
-sub write_min_files {
-    my ($self) = shift;
-
-    open( my $fh, '>', 'run-workflow.sh' )
-        or die print "Could not open file $!\n";
-
-    print $fh "#!/bin/bash\n\n";
-
-    my $cwd = getcwd();
-    foreach my $sample ( @{ $self->samples } ) {
-        print $fh <<EOF;
-export SAMPLE=$sample && ./workflow.sh
-EOF
-    }
-
-    close $fh;
-
-    chmod 0777, 'run-workflow.sh';
-
-    $self->samples( ["\${SAMPLE}"] );
-}
 
 sub process_rules {
     my $self = shift;
@@ -1144,6 +588,7 @@ sub process_rules {
     $process = $self->yaml->{rules};
 
     die print "Where are the rules?\n" unless $process;
+    die unless ref($process) eq 'ARRAY';
 
     foreach my $p ( @{$process} ) {
         next unless $p;
@@ -1168,31 +613,7 @@ sub dothings {
 
     $self->init_process_vars;
 
-    $DB::single=2;
-    if ( $self->has_select_rules ) {
-        my $p = $self->key;
-        if ( !$self->filter_select_rules( sub {/^$p$/} ) ) {
-            $self->OUTPUT_to_INPUT;
-            $self->clear_process_vars;
-
-            $self->pkey( $self->key );
-            $self->indir( $self->outdir . "/" . $self->pkey )
-                if $self->auto_name;
-            return;
-        }
-    }
-    elsif ( $self->has_match_rules ) {
-        my $p = $self->key;
-        if ( !$self->map_match_rules( sub {$p =~ m/$_/} ) ) {
-            $self->OUTPUT_to_INPUT;
-            $self->clear_process_vars;
-
-            $self->pkey( $self->key );
-            $self->indir( $self->outdir . "/" . $self->pkey )
-                if $self->auto_name;
-            return;
-        }
-    }
+    return if $self->check_rules;
 
     $self->process( $self->local_rule->{ $self->key }->{process} );
 
@@ -1202,10 +623,11 @@ sub dothings {
 
     $self->write_rule_meta('after_meta');
 
-    $self->clear_process_vars;
+    $self->clear_process_attr;
 
     $self->indir( $self->outdir . "/" . $self->pkey ) if $self->auto_name;
 }
+
 
 =head2 check_keys
 
@@ -1233,19 +655,20 @@ sub check_keys {
     }
 }
 
-=head2 clear_process_vars
+=head2 clear_process_attr
 
 Clear the process vars
 
 =cut
 
-sub clear_process_vars {
+sub clear_process_attr {
     my $self = shift;
 
     $self->attr->clear;
     $self->local_attr->clear;
 
     $self->add_attr('global_attr');
+
     $self->eval_attr;
 }
 
@@ -1263,7 +686,6 @@ sub init_process_vars {
         $self->make_outdir() unless $self->by_sample_outdir;
     }
 
-    #TODO move this over to local
     if ( exists $self->local_rule->{ $self->key }->{override_process}
         && $self->local_rule->{ $self->key }->{override_process} == 1 )
     {
@@ -1321,84 +743,22 @@ sub add_attr {
         my ($v) = $self->$type->get_values($key);
         $self->attr->set( $key => $v );
     }
-
 }
-
-=head2 write_rule_meta
-
-=cut
-
-sub write_rule_meta {
-    my ( $self, $meta ) = @_;
-
-    print "\n$self->{comment_char}\n";
-    if ( $meta eq "after_meta" ) {
-        print "$self->{comment_char} Ending $self->{key}\n";
-    }
-    print "$self->{comment_char}\n\n";
-
-    return unless $meta eq "before_meta";
-    print "$self->{comment_char} Starting $self->{key}\n";
-    print "$self->{comment_char}\n\n";
-
-    if ( $self->verbose ) {
-        print "\n\n$self->{comment_char}\n";
-        print "$self->{comment_char} Variables \n";
-        print "$self->{comment_char} Indir: " . $self->indir . "\n";
-        print "$self->{comment_char} Outdir: " . $self->outdir . "\n";
-
-        if ( exists $self->local_rule->{ $self->key }->{local} ) {
-
-            print "$self->{comment_char} Local Variables:\n";
-
-            my @keys = $self->local_attr->get_keys();
-
-            foreach my $k (@keys) {
-                my ($v) = $self->local_attr->get_values($k);
-                print "$self->{comment_char}\t$k: " . $v . "\n";
-            }
-        }
-
-        if ( $self->resample ) {
-            print "$self->{comment_char} Resampling Samples: ",
-                join( ", ", @{ $self->samples } ) . "\n";
-        }
-        print "$self->{comment_char}\n\n";
-    }
-
-}
-
-=head3 write_process
-
-Fill in the template with the process
-
-=cut
-
-has 'pkey' => (
-    is        => 'rw',
-    isa       => 'Str|Undef',
-    predicate => 'has_pkey'
-);
 
 sub write_process {
     my ($self) = @_;
-
-    my ( $template, $tmp, $newprocess, $sample, $origout, $origin );
-
-    $origout = $self->outdir;
-    $origin  = $self->indir;
 
     $self->save_env;
 
     if ( !$self->override_process ) {
         foreach my $sample ( @{ $self->samples } ) {
+            $self->sample($sample);
             $self->process_by_sample_outdir($sample)
                 if $self->by_sample_outdir;
             $self->eval_attr($sample);
             my $data = { self => \$self, sample => $sample };
             $self->process_template($data);
-            $self->outdir($origout);
-            $self->indir($origin);
+            $self->reset_special_vars;
         }
     }
     else {
@@ -1407,91 +767,21 @@ sub write_process {
         $self->process_template($data);
     }
 
-    if ( $self->wait ) {
-        print "\nwait\n";
-    }
+    print "\nwait\n" if $self->wait;
 
     $self->OUTPUT_to_INPUT;
 
     $self->pkey( $self->key );
-
-    #$self->outdir($origout);
-    #$self->indir($origin);
-}
-
-=head3 process_by_sample_outdir
-
-Make sure indir/outdirs are named appropriated for samples when using by
-
-=cut
-
-sub process_by_sample_outdir {
-    my $self   = shift;
-    my $sample = shift;
-
-    my ( $tt, $key );
-    $tt  = $self->outdir;
-    $key = $self->key;
-    $tt =~ s/$key/$sample\/$key/;
-    $self->outdir($tt);
-    $self->make_outdir;
-    $self->attr->set( 'outdir' => $self->outdir );
-
-    $tt = $self->indir;
-    if ( $tt =~ m/\{\$self/ ) {
-        $tt = "$tt/{\$sample}";
-        $self->indir($tt);
-    }
-    elsif ( $self->has_pkey ) {
-        $key = $self->pkey;
-        $tt =~ s/$key/$sample\/$key/;
-        $self->indir($tt);
-    }
-    else {
-        $tt = "$tt/$sample";
-        $self->indir($tt);
-    }
-    $self->attr->set( 'indir' => $self->indir );
-}
-
-=head3 OUTPUT_to_INPUT
-
-If we are using auto_input chain INPUT/OUTPUT
-
-=cut
-
-sub OUTPUT_to_INPUT {
-    my $self = shift;
-
-    #Change the output to input
-    if ( $self->auto_input && $self->local_attr->exists('OUTPUT') ) {
-        my ( $tmp, $indir, $outdir ) = (
-            $self->local_attr->get_values('OUTPUT'),
-            $self->indir, $self->outdir
-        );
-        $tmp =~ s/{\$self->outdir}/{\$self->indir}/g;
-        $self->INPUT($tmp);
-
-        #This is not the best way of doing this....
-        $self->global_attr->set( INPUT => $self->INPUT );
-    }
-    else {
-        $self->clear_OUTPUT();
-    }
 }
 
 sub process_template {
     my ( $self, $data ) = @_;
 
-    my ( $tmp, $template );
-
-    $template = $self->make_template( $self->process );
+    my $template = $self->make_template( $self->process );
     $template->fill_in( HASH => $data, OUTPUT => \*STDOUT );
 
-    $self->INPUT( $self->local_attr->get_values('INPUT') )
-        if $self->local_attr->exists('INPUT');
-    $self->OUTPUT( $self->local_attr->get_values('OUTPUT') )
-        if $self->local_attr->exists('OUTPUT');
+    $DB::single=2;
+    $DB::single=2;
 
     print "\n\n";
 }
