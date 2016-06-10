@@ -15,13 +15,15 @@ processing those samples in one or more steps. Also, most bioinformatics
 workflows are bash based, and no one wants to reinvent the wheel to rewrite
 their code in perl/python/whatever.
 
+These docs are also available at L<http://jerowe.github.io/BioX-Workflow-Docs/showcase.html>
+
 Once you have your configuration all set, to process your entire workflow run
 
-    biox-workflow.pl --workflow workflow.yml > workflow.sh
+ biox-workflow.pl --workflow workflow.yml > workflow.sh
 
 Alternately, to select an exact rule
 
-    biox-workflow.pl --workflow workflow.yml --select_rules bowtie2 > rule1.sh
+ biox-workflow.pl --workflow workflow.yml --select_rules bowtie2 > rule1.sh
 
 To match a set of rules using a regexp
 

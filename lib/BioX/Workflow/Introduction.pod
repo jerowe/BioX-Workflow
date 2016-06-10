@@ -7,6 +7,8 @@ processing those samples in one or more steps. Also, most bioinformatics
 workflows are bash based, and no one wants to reinvent the wheel to rewrite
 their code in perl/python/whatever.
 
+These docs are also available at L<http://jerowe.github.io/BioX-Workflow-Docs/showcase.html>
+
 Once you have your configuration all set, to process your entire workflow run
 
  biox-workflow.pl --workflow workflow.yml > workflow.sh
