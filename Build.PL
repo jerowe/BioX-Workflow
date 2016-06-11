@@ -39,6 +39,7 @@ my %module_build_args = (
     "List::Compare" => 0,
     "List::Uniq" => 0,
     "Moose" => 0,
+    "Moose::Role" => 0,
     "MooseX::FileAttribute" => 0,
     "MooseX::Getopt" => 0,
     "MooseX::Getopt::Usage" => 0,

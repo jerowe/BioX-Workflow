@@ -22,123 +22,40 @@ You shouldn't really need to look here unless you have some reason to do some se
 
 Moose attributes. Technically any of these can be changed, but may break everything.
 
-## comment\_char
+### comment\_char
 
-## coerce\_paths
+This should really be in BioX::Wrapper
 
-## select\_rules
+### workflow
 
-Select a subsection of rules
+Path to workflow workflow. This must be a YAML file.
 
-## match\_rules
+### rule\_based
 
-Select a subsection of rules by regexp
+This is the default. The outer loop are the rules, not the samples
 
-### resample
+### sample\_based
 
-Boolean value get new samples based on indir/file\_rule or no
+Default Value. The outer loop is samples, not rules. Must be set in your global values or on the command line --sample\_based 1
 
-Samples are found at the beginning of the workflow, based on the global indir variable and the file\_find.
+If you ever have resample: 1 in your config you should NOT set this value to true!
 
-Chances are you don't want to set resample to try, because these files probably won't exist outside of the indirectory until the pipeline is run.
+## stash
 
-One example of doing so, shown in the gemini.yml in the examples directory, is looking for uncompressed files, .vcf extension, compressing them, and
-then resampling based on the .vcf.gz extension.
+This isn't ever used in the code. Its just there incase you want to persist objects across rules
 
-## find\_by\_dir
+It uses Moose::Meta::Attribute::Native::Trait::Hash and supports all the methods.
 
-Use this option when you sample names are by directory
-The default is to find samples by filename
+        set_stash     => 'set',
+        get_stash     => 'get',
+        has_no_stash => 'is_empty',
+        num_stashs    => 'count',
+        delete_stash  => 'delete',
+        stash_pairs   => 'kv',
 
-    /SAMPLE1
-        SAMPLE1_r1.fastq.gz
-        SAMPLE1_r2.fastq.gz
-    /SAMPLE2
-        SAMPLE2_r1.fastq.gz
-        SAMPLE2_r2.fastq.gz
+## plugins
 
-## by\_sample\_outdir
-
-    outdir/
-    /outdir/SAMPLE1
-        /rule1
-        /rule2
-        /rule3
-    /outdir/SAMPLE2
-        /rule1
-        /rule2
-        /rule3
-
-Instead of
-
-    /outdir
-        /rule1
-        /rule2
-
-This feature is not particularly well supported, and may break when mixed with other methods, particularly --resample
-
-### min
-
-Print the workflow as 2 files.
-
-    #run-workflow.sh
-    export SAMPLE=sampleN && ./run_things
-
-### number\_rules
-
-    Instead of
-    outdir/
-        rule1
-        rule2
-
-    outdir/
-        001-rule1
-        002-rule2
-
-### auto\_name
-
-Auto\_name - Create outdirectory based on rulename
-
-global:
-    - outdir: /home/user/workflow/processed
-rule:
-    normalize:
-        process:
-            dostuff {$self->indir}/{$sample}.in >> {$self->outdir}/$sample.out
-
-Would create your directory structure /home/user/workflow/processed/normalize (if it doesn't exist)
-
-### auto\_input
-
-This is similar to the auto\_name function in the BioX::Workflow.
-Instead this says each input should be the previous output.
-
-### verbose
-
-Output some more things
-
-### wait
-
-Print "wait" at the end of each rule
-
-### override\_process
-
-local:
-    - override\_process: 1
-
-### indir outdir
-
-### create\_outdir
-
-### INPUT OUTPUT
-
-Special variables that can have input/output
-
-These variables are also used in [BioX::Workflow::Plugin::Drake](https://metacpan.org/pod/BioX::Workflow::Plugin::Drake)
-
-### file\_rule
-
-Rule to find files
+Load plugins as an opt
 
 ### No GetOpt Here
 
@@ -156,54 +73,19 @@ Attributes defined in the rules->rulename->local section of the yaml file
 
 ### local\_rule
 
-### infiles
-
-Infiles to be processed
-
-### samples
-
 ### process
 
-Do stuff
+Our bash string
+
+    bowtie2 -p 12 -I {$sample}.fastq -O {$sample}.bam
 
 ### key
 
-Do stuff
+Name of the rule
 
-### workflow
+### pkey
 
-Path to workflow workflow. This must be a YAML file.
-
-### rule\_based
-
-This is the default. The outer loop are the rules, not the samples
-
-### sample\_based
-
-Default Value. The outer loop is samples, not rules. Must be set in your global values or on the command line --sample\_based 1
-
-If you ever have resample: 1 in your config you should NOT set this value to true!
-
-### save\_object\_env
-
-Save object env. This will save all the variables. Useful for debugging, but gets unweildly for larger workflows.
-
-## stash
-
-This isn't ever used in the code. Its just there incase you want to do some things with override\_process
-
-It uses Moose::Meta::Attribute::Native::Trait::Hash and supports all the methods.
-
-        set_stash     => 'set',
-        get_stash     => 'get',
-        has_no_stash => 'is_empty',
-        num_stashs    => 'count',
-        delete_stash  => 'delete',
-        stash_pairs   => 'kv',
-
-## \_classes
-
-Saves a snapshot of the entire namespace for the initial environment, and each rule.
+Name of the previous rule
 
 ## Subroutines
 
@@ -213,41 +95,19 @@ Subroutines can also be overriden and/or extended in the usual Moose fashion.
 
 Starting point.
 
-## save\_env
+### init\_things
 
-At each rule save the env for debugging purposes.
+Load the workflow, additional classes, and plugins
 
-### make\_outdir
+Initialize the global\_attr, make the global outdir, and find samples
 
-Set initial indir and outdir
+## workflow\_load
 
-### get\_samples
-
-Get basename of the files. Can add optional rules.
-
-sample.vcf.gz and sample.vcf would be sample if the file\_rule is (.vcf)$|(.vcf.gz)$
-
-Also gets the full path to infiles
-
-Instead of doing
-
-    foreach my $sample (@$self->samples){
-        dostuff
-    }
-
-Could have
-
-    foreach my $infile (@$self->infiles){
-        dostuff
-    }
-
-## match\_samples
-
-Match samples based on regex written in file\_rule
+use Config::Any to load configuration files - yaml, json, etc
 
 ### plugin\_load
 
-Load plugins defined in yaml with MooseX::Object::Pluggable
+Load plugins defined in yaml or on command line with --plugins with MooseX::Object::Pluggable
 
 ### class\_load
 
@@ -257,15 +117,31 @@ Load classes defined in yaml with Class::Load
 
 Make the template for interpolating strings
 
+## init\_global\_attr
+
+Add our global key from config file to the global\_attr, and then to attr
+
+Deprecated: set\_global\_yaml
+
 ### create\_attr
 
-make attributes
+Add attributes to $self-> namespace
+
+### eval\_attr
+
+Evaluate the keys for variables using Text::Template
+{$sample} -> SampleA
+{$self->indir} -> data/raw (or the indir of the rule)
+
+## 
+
+After each rule is processe clear the $self->attr
 
 ## check\_keys
 
 There should be one key and one key only!
 
-## clear\_process\_vars
+## clear\_process\_attr
 
 Clear the process vars
 
@@ -276,20 +152,6 @@ Initialize the process vars
 ## add\_attr
 
 Add the local attr onto the global attr
-
-## write\_rule\_meta
-
-### write\_process
-
-Fill in the template with the process
-
-### process\_by\_sample\_outdir
-
-Make sure indir/outdirs are named appropriated for samples when using by
-
-### OUTPUT\_to\_INPUT
-
-If we are using auto\_input chain INPUT/OUTPUT
 
 # DESCRIPTION
 
