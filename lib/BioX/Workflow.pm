@@ -1,7 +1,7 @@
 package BioX::Workflow;
 
 use 5.008_005;
-our $VERSION = '1.0.1';
+our $VERSION = '1.0.2';
 
 use Moose;
 

@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow
 
 {{$NEXT}}
+
+1.0.2  2016-06-17 10:22:09 GST
     - Added fix for arrays or hashes in workflow config
     - Added documentation for select_rules and match_rules
     - Refactored code into Moose roles

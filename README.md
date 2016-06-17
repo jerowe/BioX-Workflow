@@ -133,7 +133,9 @@ Evaluate the keys for variables using Text::Template
 {$sample} -> SampleA
 {$self->indir} -> data/raw (or the indir of the rule)
 
-## 
+If variables are themselves hashes/array refs, leave them alone
+
+## clear\_attr
 
 After each rule is processe clear the $self->attr
 
@@ -143,7 +145,9 @@ There should be one key and one key only!
 
 ## clear\_process\_attr
 
-Clear the process vars
+Clear the process attr
+
+Deprecated: clear\_process\_vars
 
 ## init\_process\_vars
 
@@ -172,9 +176,12 @@ the authors would like to express their gratitude.
 
 As of version 0.03:
 
-This modules continuing development is supported by NYU Abu Dhabi in the Center for Genomics and Systems Biology.
-With approval from NYUAD, this information was generalized and put on bitbucket, for which
-the authors would like to express their gratitude.
+This modules continuing development is supported
+by NYU Abu Dhabi in the Center for Genomics and
+Systems Biology. With approval from NYUAD, this
+information was generalized and put on bitbucket,
+for which the authors would like to express their
+gratitude.
 
 # COPYRIGHT
 
