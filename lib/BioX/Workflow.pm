@@ -78,7 +78,6 @@ has '+comment_char' => (
     clearer   => 'clear_comment_char',
 );
 
-
 =head3 workflow
 
 Path to workflow workflow. This must be a YAML file.
@@ -86,9 +85,9 @@ Path to workflow workflow. This must be a YAML file.
 =cut
 
 has_file 'workflow' => (
-    is       => 'rw',
-    required => 1,
-    must_exist => 1,
+    is            => 'rw',
+    required      => 1,
+    must_exist    => 1,
     documentation => q{Your configuration workflow file.},
 );
 
@@ -155,11 +154,10 @@ Load plugins as an opt
 =cut
 
 has 'plugins' => (
-    is => 'rw',
-    isa => 'ArrayRef',
-    default => sub {[]},
+    is      => 'rw',
+    isa     => 'ArrayRef',
+    default => sub { [] },
 );
-
 
 =head3 No GetOpt Here
 
@@ -197,18 +195,18 @@ has 'global_attr' => (
         my $self = shift;
 
         my $n = Data::Pairs->new(
-            [   { resample   => $self->resample },
-                { wait       => $self->wait },
-                { auto_input => $self->auto_input },
-                { coerce_paths => $self->coerce_paths },
-                { auto_name => $self->auto_name },
-                { indir => $self->indir },
-                { outdir => $self->outdir },
-                { min => $self->min },
+            [   { resample         => $self->resample },
+                { wait             => $self->wait },
+                { auto_input       => $self->auto_input },
+                { coerce_paths     => $self->coerce_paths },
+                { auto_name        => $self->auto_name },
+                { indir            => $self->indir },
+                { outdir           => $self->outdir },
+                { min              => $self->min },
                 { override_process => $self->override_process },
-                { rule_based => $self->rule_based },
-                { verbose => $self->verbose },
-                { create_outdir => $self->create_outdir },
+                { rule_based       => $self->rule_based },
+                { verbose          => $self->verbose },
+                { create_outdir    => $self->create_outdir },
             ]
         );
         return $n;
@@ -236,7 +234,6 @@ has 'local_rule' => (
     is     => 'rw',
     isa    => 'HashRef'
 );
-
 
 =head3 process
 
@@ -271,12 +268,11 @@ Name of the previous rule
 =cut
 
 has 'pkey' => (
-    traits => ['NoGetopt'],
+    traits    => ['NoGetopt'],
     is        => 'rw',
     isa       => 'Str|Undef',
     predicate => 'has_pkey'
 );
-
 
 =head2 Subroutines
 
@@ -304,7 +300,6 @@ sub run {
     $self->write_workflow_meta('end');
 }
 
-
 =head3 init_things
 
 Load the workflow, additional classes, and plugins
@@ -330,7 +325,6 @@ sub init_things {
 
     $self->save_env;
 }
-
 
 =head2 workflow_load
 
@@ -360,13 +354,13 @@ sub plugin_load {
     my ($self) = shift;
 
     my $plugins = [];
-    if($self->yaml->{plugins}){
+    if ( $self->yaml->{plugins} ) {
         $plugins = $self->yaml->{plugins};
     }
-    elsif($self->plugins){
+    elsif ( $self->plugins ) {
         $plugins = $self->plugins;
     }
-    else{
+    else {
         return;
     }
 
@@ -407,6 +401,7 @@ sub make_template {
         SOURCE => "$E{$input}",
     );
 
+    #SOURCE => "$input",
     return $template;
 }
 
@@ -424,9 +419,9 @@ sub init_global_attr {
     return unless exists $self->yaml->{global};
 
     my $aref = $self->yaml->{global};
-    for my $a (@$aref){
-        while (my ($key, $value) = each(%{$a})) {
-            $self->global_attr->set($key => $value);
+    for my $a (@$aref) {
+        while ( my ( $key, $value ) = each( %{$a} ) ) {
+            $self->global_attr->set( $key => $value );
         }
     }
 
@@ -506,6 +501,8 @@ Evaluate the keys for variables using Text::Template
 {$sample} -> SampleA
 {$self->indir} -> data/raw (or the indir of the rule)
 
+If variables are themselves hashes/array refs, leave them alone
+
 =cut
 
 sub eval_attr {
@@ -516,9 +513,17 @@ sub eval_attr {
 
     foreach my $k (@keys) {
         next unless $k;
+
         my ($v) = $self->attr->get_values($k);
         next unless $v;
 
+        #If its an array or hash reference leave it alone
+        if ( ref($v) eq 'ARRAY' || ref($v) eq 'HASH' ) {
+            $self->$k($v);
+            next;
+        }
+
+        #Otherwise its a string
         my $template = $self->make_template($v);
         my $text;
         if ($sample) {
@@ -532,11 +537,10 @@ sub eval_attr {
         $self->$k($text);
     }
 
-
     $self->make_outdir if $self->create_outdir;
 }
 
-=head2
+=head2 clear_attr
 
 After each rule is processe clear the $self->attr
 
@@ -565,6 +569,7 @@ sub write_pipeline {
         $self->process_rules;
     }
     elsif ( $self->sample_based ) {
+
         #Store the samples
         my $sample_store = $self->samples;
         foreach my $sample (@$sample_store) {
@@ -580,7 +585,6 @@ sub write_pipeline {
     }
 }
 
-
 sub process_rules {
     my $self = shift;
 
@@ -592,13 +596,13 @@ sub process_rules {
 
     foreach my $p ( @{$process} ) {
         next unless $p;
-        if($self->number_rules){
-            my @keys = keys %{$p};
-            my $result = sprintf("%04d", $self->counter_rules);
+        if ( $self->number_rules ) {
+            my @keys   = keys %{$p};
+            my $result = sprintf( "%04d", $self->counter_rules );
             my $newkey = $keys[0];
-            $newkey = $result.'-'.$newkey;
-            $p->{$newkey} = dclone($p->{$keys[0]});
-            delete $p->{$keys[0]};
+            $newkey = $result . '-' . $newkey;
+            $p->{$newkey} = dclone( $p->{ $keys[0] } );
+            delete $p->{ $keys[0] };
         }
         $self->local_rule($p);
         $self->dothings;
@@ -628,7 +632,6 @@ sub dothings {
     $self->indir( $self->outdir . "/" . $self->pkey ) if $self->auto_name;
 }
 
-
 =head2 check_keys
 
 There should be one key and one key only!
@@ -657,7 +660,9 @@ sub check_keys {
 
 =head2 clear_process_attr
 
-Clear the process vars
+Clear the process attr
+
+Deprecated: clear_process_vars
 
 =cut
 
@@ -780,8 +785,8 @@ sub process_template {
     my $template = $self->make_template( $self->process );
     $template->fill_in( HASH => $data, OUTPUT => \*STDOUT );
 
-    $DB::single=2;
-    $DB::single=2;
+    $DB::single = 2;
+    $DB::single = 2;
 
     print "\n\n";
 }
@@ -812,9 +817,13 @@ the authors would like to express their gratitude.
 
 As of version 0.03:
 
-This modules continuing development is supported by NYU Abu Dhabi in the Center for Genomics and Systems Biology.
-With approval from NYUAD, this information was generalized and put on bitbucket, for which
-the authors would like to express their gratitude.
+This modules continuing development is supported
+by NYU Abu Dhabi in the Center for Genomics and
+Systems Biology. With approval from NYUAD, this
+information was generalized and put on bitbucket,
+for which the authors would like to express their
+gratitude.
+
 
 =head1 COPYRIGHT
 

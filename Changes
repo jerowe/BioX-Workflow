@@ -1,6 +1,7 @@
 Revision history for BioX-Workflow
 
 {{$NEXT}}
+    - Added fix for arrays or hashes in workflow config
     - Added documentation for select_rules and match_rules
     - Refactored code into Moose roles
     - Added getopt option for plugins

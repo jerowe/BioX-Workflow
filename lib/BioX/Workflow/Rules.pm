@@ -153,7 +153,7 @@ sub check_rules{
 
     if($ret){
         $self->OUTPUT_to_INPUT;
-        $self->clear_process_vars;
+        $self->clear_process_attr;
 
         $self->pkey( $self->key );
         $self->indir( $self->outdir . "/" . $self->pkey )
