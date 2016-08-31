@@ -4,7 +4,7 @@
       "Jillian Rowe <jillian.e.rowe@gmail.com>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Zilla version 6.005, Dist::Milla version v1.0.16, CPAN::Meta::Converter version 2.150001",
+   "generated_by" : "Dist::Milla version v1.0.16, Dist::Zilla version 6.007, CPAN::Meta::Converter version 2.150001",
    "license" : [
       "perl_5"
    ],
@@ -100,9 +100,10 @@
          "web" : "https://github.com/jerowe/BioX-Workflow"
       }
    },
-   "version" : "1.0.2",
+   "version" : "1.10",
    "x_contributors" : [
       "Jillian Rowe <jir2004@qatar-med.cornell.edu>"
-   ]
+   ],
+   "x_serialization_backend" : "Cpanel::JSON::XS version 3.0217"
 }
 

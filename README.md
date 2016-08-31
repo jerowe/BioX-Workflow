@@ -14,6 +14,8 @@ This module was written with Bioinformatics workflows in mind, but should be ext
 
 Please check out the full Usage Docs at [BioX::Workflow::Usage](https://metacpan.org/pod/BioX::Workflow::Usage)
 
+Alternately, check out the github pages at [http://jerowe.github.io/BioX-Workflow-Docs/showcase.html](http://jerowe.github.io/BioX-Workflow-Docs/showcase.html). This format may be easier to read.
+
 # In Code Documenation
 
 You shouldn't really need to look here unless you have some reason to do some serious hacking.
