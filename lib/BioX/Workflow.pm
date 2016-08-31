@@ -59,6 +59,8 @@ This module was written with Bioinformatics workflows in mind, but should be ext
 
 Please check out the full Usage Docs at L<BioX::Workflow::Usage>
 
+Alternately, check out the github pages at L<http://jerowe.github.io/BioX-Workflow-Docs/showcase.html>. This format may be easier to read.
+
 =head1 In Code Documenation
 
 You shouldn't really need to look here unless you have some reason to do some serious hacking.
